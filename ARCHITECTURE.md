@@ -1,12 +1,15 @@
-# Architecture — Geometry Proof Agent v0.12.0
+# Architecture — Geometry Proof Agent v0.13.0
 
-> **Version**: 0.12.0 · **Author**: Jiangsheng Yu · **License**: MIT  
-> **17 Python modules** (~16,200 lines) + companion **Lean 4** project
+> **Version**: 0.13.0 · **Author**: Jiangsheng Yu · **License**: MIT  
+> **18 Python modules** (~19,700 lines) + companion **Lean 4** project
 
 Deep-dive into the system's design, module API, data flow,
-and dependency structure.  v0.12.0 introduces a **mutual promotion loop**
+and dependency structure.  v0.12.0 introduced a **mutual promotion loop**
 where accumulated knowledge guides future conjecture generation, rule
 selection, and search strategy, while new proofs enrich the knowledge base.
+v0.13.0 adds **thread-safe Pólya agent**, **constraint-aware coordinate
+initialisation**, **29 deep generators** (including 3 diversity generators),
+and **adaptive Gate D** trial counts.
 
 ---
 
@@ -57,7 +60,7 @@ trusted ground truth.
 │           │                            Orchestration & Entry    │
 ├───────────┼─────────────────────────────────────────────────────┤
 │  Layer 4  │  evolve · conjecture · genetic · rlvr · polya       │
-│           │                                         Discovery   │
+│           │  polya_controller                       Discovery   │
 ├───────────┼─────────────────────────────────────────────────────┤
 │  Layer 3  │  engine · search                        Reasoning   │
 ├───────────┼─────────────────────────────────────────────────────┤
@@ -73,10 +76,10 @@ trusted ground truth.
 | Module | Lines | Purpose |
 |--------|------:|---------|
 | `dsl.py` | 301 | Core data types: `Fact`, `Goal`, `Step`, `GeoState`, 24 canonical constructors |
-| `rules.py` | 1481 | 69 deduction rules including converse/production and cross-family bridge enhancers |
-| `semantic.py` | 980 | Fingerprinting, NL generation (zh/en), Lean 4 codegen, SVG visualisation |
-| `knowledge.py` | 765 | Thread-safe persistent store with **guidance API**: rule success profiles, proof chains, predicate coverage, difficulty profiles, structural dedup |
-| `difficulty_eval.py` | 477 | Ceva-calibrated difficulty scoring (1–10) with concept-family analysis |
+| `rules.py` | 1808 | 69 deduction rules including converse/production and cross-family bridge enhancers |
+| `semantic.py` | 1081 | Fingerprinting, NL generation (zh/en), Lean 4 codegen, SVG visualisation |
+| `knowledge.py` | 840 | Thread-safe persistent store with **guidance API**: rule success profiles, proof chains, predicate coverage, difficulty profiles, structural dedup |
+| `difficulty_eval.py` | 568 | Ceva-calibrated difficulty scoring (1–10) with concept-family analysis |
 
 **Invariant**: Foundation modules depend only on `dsl.py` (or nothing).
 
@@ -105,11 +108,12 @@ independently checks them.  They share no mutable state.
 
 | Module | Lines | Purpose |
 |--------|------:|---------|
-| `evolve.py` | 2424 | **Knowledge-adaptive** evolution loop: 30+ problem generators, adaptive difficulty, weighted generator selection, proof pruning, compression, cross-session structural dedup |
-| `conjecture.py` | 1536 | **Experience-guided** conjecture search: bridge composition, backward chaining, MCTS; experience-weighted bridge selection, under-explored predicate targeting |
-| `genetic.py` | 846 | Genetic Algorithm: genome encoding, crossover, mutation, tournament |
-| `rlvr.py` | 886 | REINFORCE-style policy gradient with symbolic engine as reward oracle |
-| `polya.py` | 912 | **Pólya plausible-reasoning** agent: numerical coordinate instantiation validates conjectures before symbolic proof |
+| `evolve.py` | 2921 | **Knowledge-adaptive** evolution loop: 38+ problem generators, adaptive difficulty, weighted generator selection, proof pruning, compression, adaptive Gate D trials (200/120), cross-session structural dedup |
+| `conjecture.py` | 2483 | **Experience-guided** conjecture search: bridge composition, backward chaining, MCTS; 29 deep generators (incl. 3 diversity generators); experience-weighted bridge selection, under-explored predicate targeting |
+| `genetic.py` | 889 | Genetic Algorithm: genome encoding, crossover, mutation, tournament |
+| `rlvr.py` | 944 | REINFORCE-style policy gradient with symbolic engine as reward oracle |
+| `polya.py` | 1629 | **Thread-safe** Pólya plausible-reasoning agent: constraint-aware coordinate initialisation (`_smart_init_coords`), thread-safe epsilon (no `global _EPS`), numerical conjecture validation |
+| `polya_controller.py` | 330 | Pólya 4-step adaptive controller: conjecture profiling, plan generation, boosted `premise_probe_trials` for Cyclic/multi-Perp |
 
 **Quality gates**: Every candidate theorem must pass ≥5 checks:
 novelty fingerprint, structural fingerprint, knowledge-density ≥ 0.4,
@@ -120,8 +124,8 @@ minimum difficulty score, minimum distinct-rule count.
 | Module | Lines | Purpose |
 |--------|------:|---------|
 | `pipeline.py` | 698 | Multi-agent pipeline: Parser → Planner → Proposer → Critic → Curriculum |
-| `html_export.py` | 1179 | Incremental HTML writer with SVG diagrams and Lean 4 syntax highlighting |
-| `main.py` | 328 | CLI (`argparse`): `--lean`, `--llm`, `--hybrid`, `--heuristic`, etc. |
+| `html_export.py` | 1333 | Incremental HTML writer with SVG diagrams and Lean 4 syntax highlighting |
+| `main.py` | 331 | CLI (`argparse`): `--lean`, `--llm`, `--hybrid`, `--heuristic`, etc. |
 | `run_evolve.py` | 176 | Profile-based runner (`standard` / `fast_discover`) for theorem discovery |
 
 ---
@@ -193,13 +197,13 @@ module, organised by layer (bottom-up).
 
 ---
 
-### 4.1 `__init__.py` (71 lines) — Package Metadata
+### 4.1 `__init__.py` (72 lines) — Package Metadata
 
 | Item | Detail |
 |------|--------|
-| `__version__` | `"0.12.0"` |
+| `__version__` | `"0.13.0"` |
 | `__author__` | `"Jiangsheng Yu"` |
-| `__all__` | 17 module names exported |
+| `__all__` | 18 module names exported |
 
 Docstring describes the 5-layer architecture and mutual promotion loop.
 
@@ -266,7 +270,7 @@ Each constructor sorts/normalises arguments to ensure structural equality.
 
 ---
 
-### 4.3 `rules.py` (1481 lines) — Deduction Rules
+### 4.3 `rules.py` (1808 lines) — Deduction Rules
 
 69 rules organised into 8 concept families, including converse/production
 and cross-family bridge enhancer rules.
@@ -320,7 +324,7 @@ similarity-metric-concurrency bridges).
 
 ---
 
-### 4.4 `semantic.py` (980 lines) — Semantic Layer
+### 4.4 `semantic.py` (1081 lines) — Semantic Layer
 
 Solves four problems: fingerprinting, natural language translation,
 Lean 4 code generation, and visualisation.
@@ -365,7 +369,7 @@ Map: `_PRED_LEAN_NAME` (23 core predicates → Lean names; unknown predicates fa
 
 ---
 
-### 4.5 `knowledge.py` (765 lines) — Knowledge Store with Guidance API
+### 4.5 `knowledge.py` (840 lines) — Knowledge Store with Guidance API
 
 Thread-safe persistent store backed by JSONL files, with a **guidance API**
 that extracts actionable insights from accumulated experience:
@@ -424,7 +428,7 @@ Thread-safe (RLock).  Stores:
 
 ---
 
-### 4.6 `difficulty_eval.py` (477 lines) — Difficulty Scoring
+### 4.6 `difficulty_eval.py` (568 lines) — Difficulty Scoring
 
 Fair, Ceva-calibrated difficulty evaluation for theorems.
 
@@ -614,13 +618,13 @@ Bounded-width BFS with knowledge-guided enhancements:
 
 ---
 
-### 4.12 `evolve.py` (2424 lines) — Knowledge-Adaptive Evolution Loop
+### 4.12 `evolve.py` (2921 lines) — Knowledge-Adaptive Evolution Loop
 
 The largest module.  Drives theorem discovery in a knowledge-aware loop:
 
 ```
 for each generation:
-    1. Generate random problem instances (30+ generators)
+    1. Generate random problem instances (38+ generators)
        — generator selection weighted by under-explored predicates (2.5×)
        — difficulty adapts via solve-rate (escalate > 80%, reduce < 20%)
     2. Solve with knowledge-guided beam search
@@ -642,7 +646,7 @@ for each generation:
 | `is_mathlib4_known(...)` | Combined novelty gate |
 | `_is_cross_domain_proof(...)` | Requires ≥3 concept families or bridge rules |
 
-#### Problem Generators (30+, difficulty 2–8)
+#### Problem Generators (38+, difficulty 2–8)
 
 Categories:
 - **Chain generators**: `generate_mixed_chain`, `generate_reverse_chain`, `generate_zigzag`
@@ -651,7 +655,7 @@ Categories:
 - **Triangle/Circle**: `generate_isosceles_cyclic`, `generate_isosceles_perp_bisector`, `generate_sim_tri_angle_chain`, `generate_cyclic_isosceles_bridge`, `generate_two_triangle_sim`
 - **Extended predicates**: `generate_congtri_sim_cong_chain`, `generate_tangent_perp_chain`, `generate_circumcenter_chain`, `generate_angle_bisect_chain`, `generate_pole_polar_perp_chain`, `generate_radical_axis_perp_chain`, `generate_inversion_collinear_chain`, `generate_harmonic_cross_ratio_chain`, `generate_eqdist_midpoint_chain`, `generate_eqarea_congtri_chain`, `generate_concurrent_medians`
 
-#### Knowledge-Adaptive Features (v0.12.0)
+#### Knowledge-Adaptive Features (v0.12.0+)
 
 | Feature | Description |
 |---------|-------------|
@@ -660,6 +664,7 @@ Categories:
 | **Failed attempt recording** | Records unsuccessful attempts for learning |
 | **Cross-session structural dedup** | `structural_dedup_check()` prevents rediscovery |
 | **Knowledge auto-save** | Saves store with `guidance_summary()` after each generation |
+| **Adaptive Gate D** (v0.13.0) | `_has_inconsistent_premises()` uses 200 trials for Cyclic/multi-Perp, 120 otherwise |
 
 #### Main Functions
 
@@ -672,7 +677,7 @@ Categories:
 
 ---
 
-### 4.13 `conjecture.py` (1536 lines) — Experience-Guided Conjecture Search
+### 4.13 `conjecture.py` (2483 lines) — Experience-Guided Conjecture Search
 
 Three strategies with configurable budget allocation, all guided by
 accumulated experience:
@@ -701,14 +706,21 @@ balance.
 
 #### Strategy 3: Deep Generators (default 30%)
 
-10 hand-crafted generators spanning 4–5 concept families targeting
-difficulty ≥ 5.0:
+**29 deep generators** spanning 4–5 concept families targeting
+difficulty ≥ 5.0, organised in 5 tiers:
 
-`gen_circumcenter_iso_perp_chain`, `gen_cyclic_iso_midpoint_perp`,
-`gen_double_midpoint_sim_angle`, `gen_circumcenter_midpoint_cong_angle`,
-`gen_perp_bisector_cyclic_bridge`, `gen_angle_bisect_cyclic_chain`,
-`gen_tangent_circumcenter_chain`, `gen_triple_midpoint_concurrent_cong`,
-`gen_pole_polar_midpoint_chain`, `gen_radical_axis_circumcenter`
+- **Original 10**: `gen_circumcenter_iso_perp_chain`, `gen_cyclic_iso_midpoint_perp`,
+  `gen_double_midpoint_sim_angle`, `gen_circumcenter_midpoint_cong_angle`,
+  `gen_perp_bisector_cyclic_bridge`, `gen_angle_bisect_cyclic_chain`,
+  `gen_tangent_circumcenter_chain`, `gen_triple_midpoint_concurrent_cong`,
+  `gen_pole_polar_midpoint_chain`, `gen_radical_axis_circumcenter`
+- **Extended 5**: bridge extended, cross-domain, and similarity
+- **Clean 6**: ultra-clean congruence/midpoint/cyclic combinations
+- **Diversity 3** (v0.13.0): structurally distinct fingerprint generators
+  - `gen_cong_trans_isosceles_angle` (Cong|Cong → EqAngle, METRIC → ANGLE)
+  - `gen_double_cong_perp_bisector` (Cong|Cong|Midpoint → Perp, METRIC|MIDPOINT → LINE)
+  - `gen_parallel_perp_transfer` (Circumcenter|Midpoint(BC) → Perp, CIRCLE|MIDPOINT → LINE)
+- **Ultra-deep 5**: advanced generators spanning higher tiers
 
 #### Strategy 4: MCTS Conjecture Search
 
@@ -728,7 +740,7 @@ difficulty ≥ 5.0:
 
 ---
 
-### 4.14 `genetic.py` (846 lines) — Genetic Algorithm
+### 4.14 `genetic.py` (889 lines) — Genetic Algorithm
 
 Conjectures encoded as chromosomes (`ConjectureGenome`):
 
@@ -760,7 +772,7 @@ Operators:
 
 ---
 
-### 4.15 `rlvr.py` (886 lines) — REINFORCE with Verifiable Rewards
+### 4.15 `rlvr.py` (944 lines) — REINFORCE with Verifiable Rewards
 
 The symbolic engine provides a perfect, deterministic reward signal:
 
@@ -808,7 +820,7 @@ symbolic search, dramatically reducing wasted computation.
 
 ---
 
-### 4.17 `pipeline.py` (698 lines) — Multi-Agent Orchestration
+### 4.18 `pipeline.py` (698 lines) — Multi-Agent Orchestration
 
 ```
 User Problem
@@ -853,7 +865,7 @@ Output (certificate, NL, Lean 4)
 
 ---
 
-### 4.18 `html_export.py` (1179 lines) — HTML Output
+### 4.19 `html_export.py` (1333 lines) — HTML Output
 
 Incremental writer producing a single self-contained HTML file:
 - Dark-themed responsive design
@@ -882,7 +894,7 @@ Incremental writer producing a single self-contained HTML file:
 
 ---
 
-### 4.19 `main.py` (328 lines) — CLI Entry Point
+### 4.20 `main.py` (331 lines) — CLI Entry Point
 
 #### CLI Arguments
 
@@ -1213,4 +1225,4 @@ name, input/output predicate types, and argument patterns.
 
 ---
 
-*Architecture reference — v0.12.0*
+*Architecture reference — v0.13.0*

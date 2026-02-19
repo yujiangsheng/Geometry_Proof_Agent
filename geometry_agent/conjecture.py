@@ -7,7 +7,13 @@ space of geometry conjectures:
      to create multi-step proofs spanning many concept families.
   2. **Backward chaining**: start from a high-tier goal predicate and
      work backwards through rule chains to find viable assumptions.
-  3. **MCTS-guided exploration**: Monte Carlo Tree Search over the space
+  3. **Deep generators** (29 total, in 5 tiers): hand-crafted conjecture
+     generators spanning 4–5 concept families, including 3 **diversity
+     generators** (v0.13.0) that produce structurally distinct fingerprints:
+       - ``gen_cong_trans_isosceles_angle`` — Cong|Cong → EqAngle (METRIC → ANGLE)
+       - ``gen_double_cong_perp_bisector`` — Cong|Cong|Midpoint → Perp (METRIC|MIDPOINT → LINE)
+       - ``gen_parallel_perp_transfer`` — Circumcenter|Midpoint(BC) → Perp (CIRCLE|MIDPOINT → LINE)
+  4. **MCTS-guided exploration**: Monte Carlo Tree Search over the space
      of conjecture templates, using proof success rate as rollout value.
 
 Key advantage over random generation: these heuristics encode domain

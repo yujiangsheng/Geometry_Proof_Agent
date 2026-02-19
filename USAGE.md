@@ -1,6 +1,6 @@
 # Usage Guide
 
-Detailed usage examples and recipes for the Geometry Proof Agent v0.12.0.
+Detailed usage examples and recipes for the Geometry Proof Agent v0.13.0.
 
 ---
 
@@ -271,12 +271,13 @@ python run_evolve.py --profile fast_discover --base-seed 20260218
 - `standard`: single run using `--mode hybrid|heuristic|ga|rlvr`
 - `fast_discover`: multiple short heuristic runs, semantic dedup across rounds, early stop at `--target-novel`
 
-### Pólya Four-Step Controller (v0.12.0+)
+### Pólya Four-Step Controller (v0.12.0+, enhanced v0.13.0)
 
 Heuristic conjecture search now uses a lightweight Pólya-style control loop:
 
 1. **Understand**: profile conjecture complexity from assumptions/goal predicates
-2. **Plan**: adapt `polya_test` trials and fast/deep beam budgets per conjecture
+2. **Plan**: adapt `polya_test` trials and fast/deep beam budgets per conjecture;
+   boost `premise_probe_trials` to 30 for Cyclic or multi-Perp conjecture sets
 3. **Carry out**: run staged search with plan-specific thresholds
 4. **Look back**: record failure reasons and success counts for diagnostics
 
@@ -801,3 +802,5 @@ print(f"Valid samples: {result.n_valid}")
 | `No LLM detected` | Pull a model: `ollama pull qwen3-coder:30b` |
 | `HTML file empty` | Results go to `output/new_theorems.html`; check `output/` directory |
 | `ImportError: lean_checker` | Module was merged into `lean_bridge.py` in v0.11.0; use `from geometry_agent.lean_bridge import MockLeanChecker` |
+| `Gate D rejects valid theorems` | Ensure you are running v0.13.0+; earlier versions had a thread-safety bug where `_EPS` was corrupted under `ThreadPoolExecutor` (fixed by thread-safe `eps` parameter) |
+| `Pólya solver low pass rate` | v0.13.0’s `_smart_init_coords` dramatically improves pass rates for Cyclic/Cong/Midpoint constraints; upgrade if on v0.12.x |

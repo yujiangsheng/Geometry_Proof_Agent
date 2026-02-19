@@ -6,7 +6,7 @@ guides future conjecture generation, rule selection, and search strategy,
 while new proofs continuously enrich the knowledge base.
 
   **Layer 1 – Foundation** (基础层):
-    DSL data types, 56 deduction rules, semantic fingerprinting,
+    DSL data types, 69 deduction rules, semantic fingerprinting,
     knowledge store with guidance API, difficulty evaluation.
     Modules: ``dsl``, ``rules``, ``semantic``, ``knowledge``,
     ``difficulty_eval``.
@@ -23,10 +23,13 @@ while new proofs continuously enrich the knowledge base.
     VerificationResult, ProofVerifier), ``search``.
 
   **Layer 4 – Discovery Engines** (发现引擎层):
-    Knowledge-adaptive evolution, experience-guided conjecture search,
-    genetic algorithm, RLVR (reinforcement learning with verifiable
-    rewards), Pólya plausible-reasoning agent (numerical pre-filter).
-    Modules: ``evolve``, ``conjecture``, ``genetic``, ``rlvr``, ``polya``.
+    Knowledge-adaptive evolution, experience-guided conjecture (29 deep
+    generators), genetic algorithm, RLVR (reinforcement learning with
+    verifiable rewards), thread-safe Pólya plausible-reasoning agent
+    with constraint-aware coordinate initialisation, Pólya 4-step
+    adaptive controller.
+    Modules: ``evolve``, ``conjecture``, ``genetic``, ``rlvr``,
+    ``polya``, ``polya_controller``.
 
   **Layer 5 – Orchestration & Entry Points** (编排与入口层):
     Multi-agent pipeline, HTML export with SVG diagrams, CLI.
@@ -41,7 +44,7 @@ Author:  Jiangsheng Yu
 License: MIT
 """
 
-__version__ = "0.12.0"
+__version__ = "0.13.0"
 __author__ = "Jiangsheng Yu"
 __license__ = "MIT"
 

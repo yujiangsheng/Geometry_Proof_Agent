@@ -23,7 +23,7 @@ A theorem is considered **novel** if:
     (structural fingerprint check catches e.g. Parallel ↔ Perpendicular swaps)
   • Its knowledge density ≥ 0.4 (rejects proofs repeating the same rule)
 
-Quality pipeline (v0.13)
+Quality pipeline (v0.13.0)
 --------------------------
   • ``prune_proof()``    — backward BFS removes unused assumptions & dead steps
   • ``compress_proof()`` — removes trivial symmetry steps by remapping premises
@@ -34,16 +34,17 @@ Quality pipeline (v0.13)
   • ``_has_trivial_relay()``       — rejects theorems with "relay" assumptions
     that merely transfer a relationship to new point names for the goal
   • ``_has_inconsistent_premises()`` — rejects vacuously-true theorems whose
-    premises are contradictory / force point degeneracy (Pólya strict check)
+    premises are contradictory / force point degeneracy (Pólya strict check);
+    **adaptive trial count** (v0.13.0): 200 for Cyclic/multi-Perp, 120 otherwise
   • ``_has_representation_equivalence()`` — rejects theorems whose goal or
     assumptions merely equate two point-name representations of the same
     geometric object (e.g. ∠SAZ = ∠LAU when S on line AL, Z on line AU)
   • Structural fingerprinting via ``structural_theorem_fingerprint()``
   • Knowledge-density gate rejects repetitive proofs (kd < 0.4)
 
-Problem generators (30+)
+Problem generators (38+)
 -------------------------
-Beyond simple parallel chains, the evolution uses 30+ generators that
+Beyond simple parallel chains, the evolution uses 38+ generators that
 combine predicates from all 8 concept families:
 
   • ``generate_mixed_chain``      — random mix of ∥ and ⊥ links
