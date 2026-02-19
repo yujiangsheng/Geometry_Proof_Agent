@@ -205,6 +205,11 @@ class KnowledgeStore:
         # ── failure pattern counters ──
         self._failure_patterns: Dict[str, int] = defaultdict(int)
 
+        # ── generator memory (cross-session failure/success tracking) ──
+        # {generator_name: {"attempts": n, "successes": m,
+        #                    "consecutive_failures": k}}
+        self._generator_memory: Dict[str, Dict[str, int]] = {}
+
         # ── guidance cache (invalidated on new experience) ──
         self._guidance_cache: Dict[str, Any] = {}
 
@@ -389,6 +394,11 @@ class KnowledgeStore:
             with open(st_path, "w") as fh:
                 json.dump(self.stats().to_dict(), fh, indent=2)
 
+            # Generator memory (cross-session)
+            gm_path = self.data_dir / "generator_memory.json"
+            with open(gm_path, "w") as fh:
+                json.dump(self._generator_memory, fh, indent=2)
+
         logger.info("KnowledgeStore saved to %s", self.data_dir)
 
     def load(self) -> int:
@@ -438,6 +448,26 @@ class KnowledgeStore:
                     self._failure_patterns[pat] += cnt
                     loaded += 1
 
+        # Generator memory (cross-session)
+        gm_path = self.data_dir / "generator_memory.json"
+        if gm_path.exists():
+            with open(gm_path) as fh:
+                gm_data = json.load(fh)
+            with self._lock:
+                for gen_name, mem in gm_data.items():
+                    if gen_name not in self._generator_memory:
+                        self._generator_memory[gen_name] = mem
+                    else:
+                        # Merge: accumulate counts, keep max consecutive_failures
+                        existing = self._generator_memory[gen_name]
+                        existing["attempts"] += mem.get("attempts", 0)
+                        existing["successes"] += mem.get("successes", 0)
+                        existing["consecutive_failures"] = max(
+                            existing["consecutive_failures"],
+                            mem.get("consecutive_failures", 0),
+                        )
+                    loaded += 1
+
         logger.info("KnowledgeStore loaded %d entries from %s", loaded, self.data_dir)
         return loaded
 
@@ -473,7 +503,52 @@ class KnowledgeStore:
             self._experience_fps.clear()
             self._dedup_skipped = 0
             self._failure_patterns.clear()
+            self._generator_memory.clear()
             self._guidance_cache.clear()
+
+    # ── Generator memory (cross-session) ─────────────────────
+
+    def record_generator_outcome(
+        self, gen_name: str, success: bool,
+    ) -> None:
+        """Track per-generator performance across sessions.
+
+        Persisted via ``save()`` so cold-start generators are remembered
+        even after process restarts.
+        """
+        with self._lock:
+            if gen_name not in self._generator_memory:
+                self._generator_memory[gen_name] = {
+                    "attempts": 0,
+                    "successes": 0,
+                    "consecutive_failures": 0,
+                }
+            mem = self._generator_memory[gen_name]
+            mem["attempts"] += 1
+            if success:
+                mem["successes"] += 1
+                mem["consecutive_failures"] = 0
+            else:
+                mem["consecutive_failures"] += 1
+
+    def is_generator_cold(
+        self, gen_name: str, threshold: int = 8,
+    ) -> bool:
+        """Return True if *gen_name* has >= *threshold* consecutive failures.
+
+        Used by the conjecture pipeline to skip generators that have been
+        consistently unproductive, even across sessions.
+        """
+        with self._lock:
+            mem = self._generator_memory.get(gen_name)
+            if mem is None:
+                return False
+            return mem["consecutive_failures"] >= threshold
+
+    def generator_memory_summary(self) -> Dict[str, Dict[str, int]]:
+        """Return a snapshot of per-generator statistics."""
+        with self._lock:
+            return {k: dict(v) for k, v in self._generator_memory.items()}
 
     # ═══════════════════════════════════════════════════════════════════
     # Guidance API — knowledge actively informs the agent
