@@ -283,6 +283,87 @@ def _normalize_symmetry(f: Fact) -> Fact:
     return f
 
 
+def _symmetry_variants(f: Fact) -> List[Fact]:
+    """Return all logically equivalent forms of *f* under its symmetry group.
+
+    For example ``Midpoint(M, A, B) ≡ Midpoint(M, B, A)`` — both forms
+    are returned so that canonical-relabeling can explore both orderings
+    and choose the lexicographic minimum.
+    """
+    import itertools as _it
+
+    p = f.predicate
+    a = f.args
+
+    if p in ("Perpendicular", "Parallel", "Cong"):
+        # swap within each pair, swap the two pairs → up to 8 variants
+        if len(a) == 4:
+            out: set = set()
+            for p1, p2 in [
+                ((a[0], a[1]), (a[2], a[3])),
+                ((a[2], a[3]), (a[0], a[1])),
+            ]:
+                for x in [p1, (p1[1], p1[0])]:
+                    for y in [p2, (p2[1], p2[0])]:
+                        out.add(x + y)
+            return [Fact(p, v) for v in sorted(out)]
+
+    elif p == "EqAngle":
+        # swap the two angle-triples
+        if len(a) == 6:
+            return sorted(
+                {Fact(p, a[:3] + a[3:]), Fact(p, a[3:] + a[:3])},
+                key=lambda ff: ff.args,
+            )
+
+    elif p in ("Midpoint", "IsMidpoint"):
+        # swap the two endpoints   (M,A,B) ↔ (M,B,A)
+        if len(a) == 3:
+            return sorted(
+                {Fact(p, (a[0], a[1], a[2])), Fact(p, (a[0], a[2], a[1]))},
+                key=lambda ff: ff.args,
+            )
+
+    elif p == "Circumcenter":
+        # center fixed, permute the triangle vertices → 6 variants
+        if len(a) == 4:
+            return [
+                Fact(p, (a[0],) + q)
+                for q in sorted(set(_it.permutations(a[1:4])))
+            ]
+
+    elif p in ("Collinear", "Cyclic"):
+        return [Fact(p, q) for q in sorted(set(_it.permutations(a)))]
+
+    elif p == "Between":
+        # swap the two outer points  (A,M,B) ↔ (B,M,A)
+        if len(a) == 3:
+            return sorted(
+                {Fact(p, (a[0], a[1], a[2])), Fact(p, (a[2], a[1], a[0]))},
+                key=lambda ff: ff.args,
+            )
+
+    elif p in ("SimTri", "CongTri", "EqArea"):
+        if len(a) == 6:
+            return sorted(
+                {Fact(p, a[:3] + a[3:]), Fact(p, a[3:] + a[:3])},
+                key=lambda ff: ff.args,
+            )
+
+    elif p == "Concurrent":
+        if len(a) == 6:
+            pairs = [(a[0], a[1]), (a[2], a[3]), (a[4], a[5])]
+            out2: set = set()
+            for pp in _it.permutations(pairs):
+                for s0 in [pp[0], (pp[0][1], pp[0][0])]:
+                    for s1 in [pp[1], (pp[1][1], pp[1][0])]:
+                        for s2 in [pp[2], (pp[2][1], pp[2][0])]:
+                            out2.add(s0 + s1 + s2)
+            return [Fact(p, v) for v in sorted(out2)]
+
+    return [f]
+
+
 def semantic_theorem_fingerprint(
     assumptions: Iterable[Fact],
     goal: Fact,
@@ -292,44 +373,89 @@ def semantic_theorem_fingerprint(
     ``Parallel(A,B,C,D) ⊢ Parallel(C,D,A,B)`` and
     ``Parallel(X,Y,U,V) ⊢ Parallel(U,V,X,Y)`` produce the same hash.
 
-    The approach uses **iterative normalize-relabel**:
-      1. Normalize each fact's args using predicate symmetry rules
-      2. Sort assumptions, then canonically relabel all facts
-      3. Repeat (2 passes) so that normalization and relabeling converge
-      4. Hash the final canonical string
+    The approach enumerates all **symmetry-equivalent forms** of each
+    fact (e.g. Midpoint(M,A,B) ↔ Midpoint(M,B,A)) combined with all
+    permutations of the assumption list, and picks the lexicographically
+    minimal canonical-relabeled string.  This guarantees isomorphism
+    invariance regardless of the original point names.
 
-    This correctly deduplicates theorems like
-    ``Perpendicular(F,P,Q,Y)`` vs ``Perpendicular(T,U,K,M)`` which
-    differ only by the order of args within symmetric predicate groups.
+    For assumption lists of size ≤ 8 and total search space ≤ 200 000,
+    full enumeration is used.  Otherwise, a heuristic fallback applies.
     """
+    import itertools
+
     assums_list = list(assumptions)
     n_assums = len(assums_list)
-    # Bundle: assumptions + [goal] (goal always last)
-    all_facts = assums_list + [goal]
 
-    # Iterative normalize-relabel (2 passes for convergence)
-    for _ in range(2):
-        # Normalize predicate symmetries
-        all_facts = [_normalize_symmetry(f) for f in all_facts]
-        # Sort assumptions (goal stays last)
-        sorted_assums = sorted(
-            all_facts[:n_assums], key=lambda f: (f.predicate, f.args),
+    # -- Pre-compute symmetry variants for each assumption and for goal -
+    assum_variants = [_symmetry_variants(a) for a in assums_list]
+    goal_variants = _symmetry_variants(goal)
+
+    from functools import reduce
+    total_combos = reduce(lambda x, y: x * y,
+                          (len(v) for v in assum_variants), 1) * len(goal_variants)
+    total_perms = math.factorial(min(n_assums, 8)) if n_assums <= 8 else 1
+    total_search = total_combos * total_perms
+
+    MAX_SEARCH = 200_000
+
+    def _cs_raw(ordered_assums: List[Fact], g: Fact) -> str:
+        """Canonical-relabel (no pre-normalisation) and serialise."""
+        all_facts = list(ordered_assums) + [g]
+        relabeled, _ = _canonical_relabel(all_facts)
+        ra = sorted(relabeled[:n_assums], key=lambda f: (f.predicate, f.args))
+        rg = relabeled[-1]
+        a_str = "|".join(
+            f"{f.predicate}({','.join(f.args)})" for f in ra
         )
-        all_facts = sorted_assums + [all_facts[-1]]
-        # Canonical relabel (position-based)
-        all_facts, _ = _canonical_relabel(all_facts)
+        return f"{a_str}=>{rg.predicate}({','.join(rg.args)})"
 
-    # Final normalization pass
-    all_facts = [_normalize_symmetry(f) for f in all_facts]
-    relabeled_assums = all_facts[:n_assums]
-    relabeled_goal = all_facts[-1]
-    relabeled_assums.sort(key=lambda f: (f.predicate, f.args))
-    assums_str = "|".join(
-        f"{f.predicate}({','.join(f.args)})" for f in relabeled_assums
-    )
-    goal_str = f"{relabeled_goal.predicate}({','.join(relabeled_goal.args)})"
-    raw = f"{assums_str}=>{goal_str}"
-    return hashlib.sha256(raw.encode()).hexdigest()[:20]
+    best: Optional[str] = None
+
+    if total_search <= MAX_SEARCH:
+        # Full enumeration: variants × permutations
+        for combo in itertools.product(*assum_variants):
+            for gv in goal_variants:
+                if n_assums <= 8:
+                    for perm in itertools.permutations(combo):
+                        cs = _cs_raw(list(perm), gv)
+                        if best is None or cs < best:
+                            best = cs
+                else:
+                    sc = sorted(combo, key=lambda f: (f.predicate, f.args))
+                    cs = _cs_raw(list(sc), gv)
+                    if best is None or cs < best:
+                        best = cs
+    else:
+        # Fallback: normalise symmetry, then try permutations only
+        norm_a = [_normalize_symmetry(a) for a in assums_list]
+        norm_g = _normalize_symmetry(goal)
+        if n_assums <= 8:
+            for perm in itertools.permutations(norm_a):
+                all_f = list(perm) + [norm_g]
+                all_f, _ = _canonical_relabel(all_f)
+                all_f = [_normalize_symmetry(f) for f in all_f]
+                ra = sorted(all_f[:n_assums], key=lambda f: (f.predicate, f.args))
+                rg = all_f[-1]
+                a_str = "|".join(
+                    f"{f.predicate}({','.join(f.args)})" for f in ra
+                )
+                cs = f"{a_str}=>{rg.predicate}({','.join(rg.args)})"
+                if best is None or cs < best:
+                    best = cs
+        else:
+            sa = sorted(norm_a, key=lambda f: (f.predicate, f.args))
+            all_f = sa + [norm_g]
+            all_f, _ = _canonical_relabel(all_f)
+            all_f = [_normalize_symmetry(f) for f in all_f]
+            ra = sorted(all_f[:n_assums], key=lambda f: (f.predicate, f.args))
+            rg = all_f[-1]
+            a_str = "|".join(
+                f"{f.predicate}({','.join(f.args)})" for f in ra
+            )
+            best = f"{a_str}=>{rg.predicate}({','.join(rg.args)})"
+
+    return hashlib.sha256(best.encode()).hexdigest()[:20]
 
 
 # ── Predicate → family mapping for structural fingerprinting ─────────
@@ -374,30 +500,94 @@ def structural_theorem_fingerprint(
     structural fingerprint, because Parallel and Perpendicular both
     belong to the LINE family.
 
-    This filter catches "simple substitution" theorems that are
-    obtained by merely swapping one predicate for another without
-    changing the logical structure.
+    Uses symmetry-variant + permutation enumeration (like
+    ``semantic_theorem_fingerprint``) to correctly identify isomorphic
+    theorems regardless of point names or assumption order.
     """
+    import itertools
+
     assums_list = list(assumptions)
+    n_assums = len(assums_list)
 
     # Replace each predicate with its family name
     def _familify(f: Fact) -> Fact:
         fam = _PRED_FAMILY_STRUCTURAL.get(f.predicate, f.predicate)
         return Fact(predicate=fam, args=f.args)
 
-    family_facts = [_familify(f) for f in assums_list] + [_familify(goal)]
+    family_assums = [_familify(f) for f in assums_list]
+    family_goal = _familify(goal)
 
-    # Canonical relabel
-    relabeled, _ = _canonical_relabel(family_facts)
-    relabeled_assums = relabeled[:-1]
-    relabeled_goal = relabeled[-1]
-    relabeled_assums.sort(key=lambda f: (f.predicate, f.args))
-    assums_str = "|".join(
-        f"{f.predicate}({','.join(f.args)})" for f in relabeled_assums
-    )
-    goal_str = f"{relabeled_goal.predicate}({','.join(relabeled_goal.args)})"
-    raw = f"STRUCT:{assums_str}=>{goal_str}"
-    return hashlib.sha256(raw.encode()).hexdigest()[:20]
+    # -- symmetry variants: compute on ORIGINAL facts, then familify ----
+    #    (_symmetry_variants uses predicate names like "Midpoint" that
+    #     would not match after familification to "MIDPOINT".)
+    assum_variants = [
+        [_familify(v) for v in _symmetry_variants(a)]
+        for a in assums_list
+    ]
+    goal_variants = [_familify(v) for v in _symmetry_variants(goal)]
+
+    from functools import reduce
+    total_combos = reduce(lambda x, y: x * y,
+                          (len(v) for v in assum_variants), 1) * len(goal_variants)
+    total_perms = math.factorial(min(n_assums, 8)) if n_assums <= 8 else 1
+    total_search = total_combos * total_perms
+
+    MAX_SEARCH = 200_000
+
+    def _cs_raw(ordered_assums: List[Fact], g: Fact) -> str:
+        all_facts = list(ordered_assums) + [g]
+        relabeled, _ = _canonical_relabel(all_facts)
+        ra = sorted(relabeled[:n_assums], key=lambda f: (f.predicate, f.args))
+        rg = relabeled[-1]
+        a_str = "|".join(
+            f"{f.predicate}({','.join(f.args)})" for f in ra
+        )
+        return f"STRUCT:{a_str}=>{rg.predicate}({','.join(rg.args)})"
+
+    best: Optional[str] = None
+
+    if total_search <= MAX_SEARCH:
+        for combo in itertools.product(*assum_variants):
+            for gv in goal_variants:
+                if n_assums <= 8:
+                    for perm in itertools.permutations(combo):
+                        cs = _cs_raw(list(perm), gv)
+                        if best is None or cs < best:
+                            best = cs
+                else:
+                    sc = sorted(combo, key=lambda f: (f.predicate, f.args))
+                    cs = _cs_raw(list(sc), gv)
+                    if best is None or cs < best:
+                        best = cs
+    else:
+        norm_a = [_normalize_symmetry(a) for a in family_assums]
+        norm_g = _normalize_symmetry(family_goal)
+        if n_assums <= 8:
+            for perm in itertools.permutations(norm_a):
+                all_f = list(perm) + [norm_g]
+                all_f, _ = _canonical_relabel(all_f)
+                all_f = [_normalize_symmetry(f) for f in all_f]
+                ra = sorted(all_f[:n_assums], key=lambda f: (f.predicate, f.args))
+                rg = all_f[-1]
+                a_str = "|".join(
+                    f"{f.predicate}({','.join(f.args)})" for f in ra
+                )
+                cs = f"STRUCT:{a_str}=>{rg.predicate}({','.join(rg.args)})"
+                if best is None or cs < best:
+                    best = cs
+        else:
+            sa = sorted(norm_a, key=lambda f: (f.predicate, f.args))
+            all_f = sa + [norm_g]
+            all_f, _ = _canonical_relabel(all_f)
+            all_f = [_normalize_symmetry(f) for f in all_f]
+            ra = sorted(all_f[:n_assums], key=lambda f: (f.predicate, f.args))
+            rg = all_f[-1]
+            a_str = "|".join(
+                f"{f.predicate}({','.join(f.args)})" for f in ra
+            )
+            best = f"STRUCT:{a_str}=>{rg.predicate}({','.join(rg.args)})"
+
+    return hashlib.sha256(best.encode()).hexdigest()[:20]
 
 
 def semantic_proof_fingerprint(

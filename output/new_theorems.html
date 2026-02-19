@@ -131,480 +131,17 @@
   <h1>🌟 Geometry Proof Agent — 新发现定理</h1>
   <p>自我演化过程中发现的 mathlib4 知识库之外的几何定理</p>
   <div class="stats">
-    <span class="badge">定理总数 <b id="total-count">6</b></span>
+    <span class="badge">定理总数 <b id="total-count">1</b></span>
     <span class="badge">最长证明 <b id="max-steps">2</b> 步</span>
-    <span class="badge">最后更新 <b id="last-update">2026-02-19 10:17</b></span>
+    <span class="badge">最后更新 <b id="last-update">2026-02-19 10:43</b></span>
   </div>
 </header>
 
 <main id="theorems">
 
-<article class="theorem-card" id="theorem-1" data-fingerprint="3f5cc90cbf03ab0fdae9">
+<article class="theorem-card" id="theorem-1" data-fingerprint="ec96f62ec94652bc4069">
   <div class="card-header">
     <span class="title">定理 #1</span>
-    <span class="tag tag-verified">✅ Lean4 Verified</span>
-    <span class="tag tag-steps">2 步证明</span>
-    <span class="tag tag-preds">3 种谓词</span>
-    <span class="tag tag-rules">2 种规则</span>
-    <span class="tag tag-difficulty">1.8/10 初级</span>
-    <span class="tag tag-value">价值 2.0/10 (一般)</span>
-  </div>
-  <div class="card-body">
-
-  <div class="section">
-    <div class="section-label">📊 几何图示 / Geometry Diagram</div>
-    <div class="diagram-wrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 340" width="400" height="340">
-<defs>
-  <marker id="arr" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto"><polygon points="0 0, 6 2, 0 4" fill="#58a6ff"/></marker>
-</defs>
-  <line x1="71.9" y1="34.0" x2="340.6" y2="129.2" stroke="#bc8cff" stroke-width="2" stroke-linecap="round"/>
-  <line x1="57.5" y1="120.9" x2="342.5" y2="117.9" stroke="#bc8cff" stroke-width="2" stroke-linecap="round"/>
-  <line x1="208.3" y1="76.0" x2="204.3" y2="87.3" stroke="#bc8cff" stroke-width="1.5"/>
-  <line x1="199.9" y1="113.4" x2="200.1" y2="125.4" stroke="#bc8cff" stroke-width="1.5"/>
-  <line x1="160.5" y1="321.5" x2="329.1" y2="91.7" stroke="#bc8cff" stroke-width="2" stroke-linecap="round"/>
-  <line x1="208.3" y1="76.0" x2="204.3" y2="87.3" stroke="#bc8cff" stroke-width="1.5"/>
-  <line x1="239.9" y1="203.1" x2="249.6" y2="210.2" stroke="#bc8cff" stroke-width="1.5"/>
-  <line x1="76.9" y1="94.4" x2="193.4" y2="321.2" stroke="#d29922" stroke-width="1.5" stroke-linecap="round"/>
-  <rect x="131.2" y="203.8" width="8" height="8" fill="#d29922" transform="rotate(45 135.2 207.8)"/>
-  <line x1="109.0" y1="221.2" x2="335.8" y2="104.8" stroke="#ff7b72" stroke-width="2.5" stroke-linecap="round"/>
-  <rect x="174.8" y="181.4" width="8" height="8" fill="none" stroke="#ff7b72" stroke-width="1.2"/>
-  <circle cx="103.0" cy="45.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="112.0" y="37.0" class="pt-label">E</text>
-  <circle cx="309.6" cy="118.2" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="318.6" y="110.2" class="pt-label">X</text>
-  <circle cx="90.4" cy="120.5" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="99.4" y="112.5" class="pt-label">P</text>
-  <circle cx="179.9" cy="295.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="188.9" y="287.0" class="pt-label">R</text>
-  <circle cx="135.2" cy="207.8" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="144.2" y="199.8" class="pt-label">H</text>
-  <line x1="8" y1="322" x2="26" y2="322" stroke="#bc8cff" stroke-width="2"/>
-  <text x="30" y="326" class="legend-text">Cong</text>
-  <line x1="70" y1="322" x2="88" y2="322" stroke="#d29922" stroke-width="2"/>
-  <text x="92" y="326" class="legend-text">Midpoint</text>
-  <line x1="160" y1="322" x2="178" y2="322" stroke="#f85149" stroke-width="2"/>
-  <text x="182" y="326" class="legend-text">Perpendicular</text>
-</svg></div>
-  </div>
-  <div class="section">
-    <div class="section-label">📐 定理陈述 / Theorem Statement</div>
-    <div class="section-content">已知：线段 EX ≅ 线段 PX，线段 EX ≅ 线段 RX，H 是线段 PR 的中点。
-求证：直线 HX 垂直于直线 PR。</div>
-  </div>
-
-  <div class="section">
-    <div class="section-label">📝 证明过程 / Proof</div>
-    <div class="section-content">已知：线段 EX ≅ 线段 PX，线段 EX ≅ 线段 RX，H 是线段 PR 的中点。
-求证：直线 HX 垂直于直线 PR。
-
-证明：
-  1. 由线段 EX ≅ 线段 PX、线段 EX ≅ 线段 RX，根据线段全等传递性，得线段 PX ≅ 线段 RX。
-  2. 由线段 PX ≅ 线段 RX、H 是线段 PR 的中点，根据垂直平分线逆定理，得直线 HX 垂直于直线 PR。
-证毕。 ∎</div>
-  </div>
-
-  <div class="section">
-    <div class="section-label">🔧 Lean4 形式化代码 / Formal Lean4 Code</div>
-    <div class="section-content lean-code"><span class="keyword">import</span> LeanGeo
-
-<span class="keyword">variable</span> (E : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (H : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (P : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (R : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (X : <span class="builtin">GPoint</span>)
-
-<span class="keyword">theorem</span> novel_1 (h0 : <span class="builtin">Cong</span> E X P X) (h1 : <span class="builtin">Cong</span> E X R X) (h2 : <span class="builtin">IsMidpoint</span> H P R) : <span class="builtin">Perpendicular</span> H X P R :=
-  <span class="keyword">let</span> s0 := cong_trans E X P X R X h0 h1
-  <span class="keyword">let</span> s1 := cong_perp_bisector P X X H s0 h2
-  s1
-</div>
-  </div>
-
-  <div class="section">
-    <div class="section-label">📊 评价</div>
-    <div class="section-content"><span class="star">★</span><span class="dim">☆</span><span class="dim">☆</span><span class="dim">☆</span><span class="dim">☆</span> 难度 1.8/10（初级）<br/>💎 价值 2.0/10（一般）· 用到 2 种知识点</div>
-  </div>
-  <div class="meta-row">
-    <span>谓词: <b>Cong, Midpoint, Perpendicular</b></span>
-    <span>规则: <b>cong_perp_bisector, cong_trans</b></span>
-    <span>时间: <b>2026-02-19 02:33:58</b></span>
-  </div>
-  </div>
-</article>
-
-
-<article class="theorem-card" id="theorem-2" data-fingerprint="d9285789e94931e44fe9">
-  <div class="card-header">
-    <span class="title">定理 #2</span>
-    <span class="tag tag-verified">✅ Lean4 Verified</span>
-    <span class="tag tag-steps">2 步证明</span>
-    <span class="tag tag-preds">4 种谓词</span>
-    <span class="tag tag-rules">2 种规则</span>
-    <span class="tag tag-difficulty">3.3/10 简单</span>
-    <span class="tag tag-value">价值 2.0/10 (一般)</span>
-  </div>
-  <div class="card-body">
-
-  <div class="section">
-    <div class="section-label">📊 几何图示 / Geometry Diagram</div>
-    <div class="diagram-wrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 340" width="400" height="340">
-<defs>
-  <marker id="arr" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto"><polygon points="0 0, 6 2, 0 4" fill="#58a6ff"/></marker>
-</defs>
-  <line x1="262.5" y1="7.5" x2="262.5" y2="332.5" stroke="#d29922" stroke-width="1.5" stroke-linecap="round"/>
-  <rect x="258.5" y="166.0" width="8" height="8" fill="#d29922" transform="rotate(45 262.5 170.0)"/>
-  <line x1="281.2" y1="170.0" x2="118.8" y2="170.0" stroke="#f85149" stroke-width="2" stroke-linecap="round"/>
-  <rect x="227.2" y="166.0" width="8" height="8" fill="none" stroke="#f85149" stroke-width="1.2"/>
-  <line x1="281.2" y1="26.2" x2="118.8" y2="188.8" stroke="#ff7b72" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4 2"/>
-  <line x1="281.2" y1="313.8" x2="118.8" y2="151.2" stroke="#ff7b72" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4 2"/>
-  <path d="M 248.4 59.1 A 20.0 20.0 0 0 0 262.5 65.0" fill="none" stroke="#ff7b72" stroke-width="1.5"/>
-  <path d="M 248.4 280.9 A 20.0 20.0 0 0 1 262.5 275.0" fill="none" stroke="#ff7b72" stroke-width="1.5"/>
-  <circle cx="262.5" cy="170.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="271.5" y="162.0" class="pt-label">L</text>
-  <circle cx="262.5" cy="45.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="271.5" y="37.0" class="pt-label">E</text>
-  <circle cx="262.5" cy="295.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="271.5" y="287.0" class="pt-label">T</text>
-  <circle cx="137.5" cy="170.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="146.5" y="162.0" class="pt-label">U</text>
-  <line x1="8" y1="322" x2="26" y2="322" stroke="#f778ba" stroke-width="2"/>
-  <text x="30" y="326" class="legend-text">EqAngle</text>
-  <line x1="91" y1="322" x2="109" y2="322" stroke="#d29922" stroke-width="2"/>
-  <text x="113" y="326" class="legend-text">Midpoint</text>
-  <line x1="181" y1="322" x2="199" y2="322" stroke="#f85149" stroke-width="2"/>
-  <text x="203" y="326" class="legend-text">Perpendicular</text>
-</svg></div>
-  </div>
-  <div class="section">
-    <div class="section-label">📐 定理陈述 / Theorem Statement</div>
-    <div class="section-content">已知：L 是线段 ET 的中点，直线 LU 垂直于直线 ET。
-求证：∠UET = ∠UTE。</div>
-  </div>
-
-  <div class="section">
-    <div class="section-label">📝 证明过程 / Proof</div>
-    <div class="section-content">已知：L 是线段 ET 的中点，直线 LU 垂直于直线 ET。
-求证：∠UET = ∠UTE。
-
-证明：
-  1. 由L 是线段 ET 的中点、直线 LU 垂直于直线 ET，根据垂直平分线定理，得线段 EU ≅ 线段 TU。
-  2. 由线段 EU ≅ 线段 TU，根据等腰三角形底角定理，得∠UET = ∠UTE。
-证毕。 ∎</div>
-  </div>
-
-  <div class="section">
-    <div class="section-label">🔧 Lean4 形式化代码 / Formal Lean4 Code</div>
-    <div class="section-content lean-code"><span class="keyword">import</span> LeanGeo
-
-<span class="keyword">variable</span> (E : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (L : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (T : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (U : <span class="builtin">GPoint</span>)
-
-<span class="keyword">theorem</span> novel_2 (h0 : <span class="builtin">IsMidpoint</span> L E T) (h1 : <span class="builtin">Perpendicular</span> L U E T) : <span class="builtin">EqAngle</span> U E T U T E :=
-  <span class="keyword">let</span> s0 := perp_bisector_cong L E T U h0 h1
-  <span class="keyword">let</span> s1 := isosceles_base_angle E U T U s0
-  s1
-</div>
-  </div>
-
-  <div class="section">
-    <div class="section-label">📊 评价</div>
-    <div class="section-content"><span class="star">★</span><span class="star">★</span><span class="dim">☆</span><span class="dim">☆</span><span class="dim">☆</span> 难度 3.3/10（简单）<br/>💎 价值 2.0/10（一般）· 用到 2 种知识点</div>
-  </div>
-  <div class="meta-row">
-    <span>谓词: <b>Cong, EqAngle, Midpoint, Perpendicular</b></span>
-    <span>规则: <b>isosceles_base_angle, perp_bisector_cong</b></span>
-    <span>时间: <b>2026-02-19 02:33:58</b></span>
-  </div>
-  </div>
-</article>
-
-
-<article class="theorem-card" id="theorem-3" data-fingerprint="8b8bf25cc271d813cfd9">
-  <div class="card-header">
-    <span class="title">定理 #3</span>
-    <span class="tag tag-verified">✅ Lean4 Verified</span>
-    <span class="tag tag-steps">2 步证明</span>
-    <span class="tag tag-preds">3 种谓词</span>
-    <span class="tag tag-rules">2 种规则</span>
-    <span class="tag tag-difficulty">1.8/10 初级</span>
-    <span class="tag tag-value">价值 2.0/10 (一般)</span>
-  </div>
-  <div class="card-body">
-
-  <div class="section">
-    <div class="section-label">📊 几何图示 / Geometry Diagram</div>
-    <div class="diagram-wrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 340" width="400" height="340">
-<defs>
-  <marker id="arr" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto"><polygon points="0 0, 6 2, 0 4" fill="#58a6ff"/></marker>
-</defs>
-  <line x1="199.2" y1="11.3" x2="363.3" y2="303.4" stroke="#bc8cff" stroke-width="2" stroke-linecap="round"/>
-  <line x1="208.8" y1="7.5" x2="290.1" y2="332.5" stroke="#bc8cff" stroke-width="2" stroke-linecap="round"/>
-  <line x1="286.5" y1="154.4" x2="276.0" y2="160.3" stroke="#bc8cff" stroke-width="1.5"/>
-  <line x1="255.2" y1="168.5" x2="243.6" y2="171.5" stroke="#bc8cff" stroke-width="1.5"/>
-  <line x1="242.5" y1="15.0" x2="31.3" y2="275.0" stroke="#bc8cff" stroke-width="2" stroke-linecap="round"/>
-  <line x1="286.5" y1="154.4" x2="276.0" y2="160.3" stroke="#bc8cff" stroke-width="1.5"/>
-  <line x1="141.6" y1="148.8" x2="132.2" y2="141.2" stroke="#bc8cff" stroke-width="1.5"/>
-  <line x1="314.4" y1="302.5" x2="21.9" y2="237.5" stroke="#d29922" stroke-width="1.5" stroke-linecap="round"/>
-  <rect x="164.2" y="266.0" width="8" height="8" fill="#d29922" transform="rotate(45 168.2 270.0)"/>
-  <line x1="225.6" y1="11.2" x2="160.7" y2="303.8" stroke="#ff7b72" stroke-width="2.5" stroke-linecap="round"/>
-  <rect x="176.7" y="209.8" width="8" height="8" fill="none" stroke="#ff7b72" stroke-width="1.2"/>
-  <circle cx="218.1" cy="45.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="227.1" y="37.0" class="pt-label">B</text>
-  <circle cx="344.3" cy="269.7" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="353.3" y="261.7" class="pt-label">L</text>
-  <circle cx="280.7" cy="295.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="289.7" y="287.0" class="pt-label">F</text>
-  <circle cx="55.7" cy="245.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="64.7" y="237.0" class="pt-label">H</text>
-  <circle cx="168.2" cy="270.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="177.2" y="262.0" class="pt-label">Z</text>
-  <line x1="8" y1="322" x2="26" y2="322" stroke="#bc8cff" stroke-width="2"/>
-  <text x="30" y="326" class="legend-text">Cong</text>
-  <line x1="70" y1="322" x2="88" y2="322" stroke="#d29922" stroke-width="2"/>
-  <text x="92" y="326" class="legend-text">Midpoint</text>
-  <line x1="160" y1="322" x2="178" y2="322" stroke="#f85149" stroke-width="2"/>
-  <text x="182" y="326" class="legend-text">Perpendicular</text>
-</svg></div>
-  </div>
-  <div class="section">
-    <div class="section-label">📐 定理陈述 / Theorem Statement</div>
-    <div class="section-content">已知：线段 BL ≅ 线段 BF，线段 BL ≅ 线段 BH，Z 是线段 FH 的中点。
-求证：直线 BZ 垂直于直线 FH。</div>
-  </div>
-
-  <div class="section">
-    <div class="section-label">📝 证明过程 / Proof</div>
-    <div class="section-content">已知：线段 BL ≅ 线段 BF，线段 BL ≅ 线段 BH，Z 是线段 FH 的中点。
-求证：直线 BZ 垂直于直线 FH。
-
-证明：
-  1. 由线段 BL ≅ 线段 BH、线段 BL ≅ 线段 BF，根据线段全等传递性，得线段 BH ≅ 线段 BF。
-  2. 由线段 BH ≅ 线段 BF、Z 是线段 FH 的中点，根据垂直平分线逆定理，得直线 BZ 垂直于直线 FH。
-证毕。 ∎</div>
-  </div>
-
-  <div class="section">
-    <div class="section-label">🔧 Lean4 形式化代码 / Formal Lean4 Code</div>
-    <div class="section-content lean-code"><span class="keyword">import</span> LeanGeo
-
-<span class="keyword">variable</span> (B : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (F : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (H : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (L : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (Z : <span class="builtin">GPoint</span>)
-
-<span class="keyword">theorem</span> novel_3 (h0 : <span class="builtin">Cong</span> B L B F) (h1 : <span class="builtin">Cong</span> B L B H) (h2 : <span class="builtin">IsMidpoint</span> Z F H) : <span class="builtin">Perpendicular</span> B Z F H :=
-  <span class="keyword">let</span> s0 := cong_trans B L B H B F h1 h0
-  <span class="keyword">let</span> s1 := cong_perp_bisector B H F Z s0 h2
-  s1
-</div>
-  </div>
-
-  <div class="section">
-    <div class="section-label">📊 评价</div>
-    <div class="section-content"><span class="star">★</span><span class="dim">☆</span><span class="dim">☆</span><span class="dim">☆</span><span class="dim">☆</span> 难度 1.8/10（初级）<br/>💎 价值 2.0/10（一般）· 用到 2 种知识点</div>
-  </div>
-  <div class="meta-row">
-    <span>谓词: <b>Cong, Midpoint, Perpendicular</b></span>
-    <span>规则: <b>cong_perp_bisector, cong_trans</b></span>
-    <span>时间: <b>2026-02-19 02:33:58</b></span>
-  </div>
-  </div>
-</article>
-
-
-<article class="theorem-card" id="theorem-4" data-fingerprint="53b9babff9f7f660adef">
-  <div class="card-header">
-    <span class="title">定理 #4</span>
-    <span class="tag tag-verified">✅ Lean4 Verified</span>
-    <span class="tag tag-steps">2 步证明</span>
-    <span class="tag tag-preds">4 种谓词</span>
-    <span class="tag tag-rules">2 种规则</span>
-    <span class="tag tag-difficulty">2.0/10 初级</span>
-    <span class="tag tag-value">价值 2.0/10 (一般)</span>
-  </div>
-  <div class="card-body">
-
-  <div class="section">
-    <div class="section-label">📊 几何图示 / Geometry Diagram</div>
-    <div class="diagram-wrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 340" width="400" height="340">
-<defs>
-  <marker id="arr" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto"><polygon points="0 0, 6 2, 0 4" fill="#58a6ff"/></marker>
-</defs>
-  <line x1="199.4" y1="332.5" x2="277.6" y2="7.5" stroke="#0abde3" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="289.1" y1="22.9" x2="110.9" y2="214.2" stroke="#0abde3" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="119.9" y1="176.7" x2="220.0" y2="310.4" stroke="#0abde3" stroke-width="1.5" stroke-linecap="round"/>
-  <circle cx="261.0" cy="175.4" r="130.6" fill="none" stroke="#0abde3" stroke-width="1.5" stroke-dasharray="5 3"/>
-  <line x1="268.9" y1="157.5" x2="200.5" y2="312.9" stroke="#0abde3" stroke-width="1" stroke-linecap="round" stroke-dasharray="3 3"/>
-  <line x1="259.9" y1="195.0" x2="269.7" y2="25.4" stroke="#0abde3" stroke-width="1" stroke-linecap="round" stroke-dasharray="3 3"/>
-  <line x1="280.5" y1="172.9" x2="112.0" y2="194.6" stroke="#0abde3" stroke-width="1" stroke-linecap="round" stroke-dasharray="3 3"/>
-  <rect x="165.9" y="239.5" width="8" height="8" fill="#d29922" transform="rotate(45 169.9 243.5)"/>
-  <line x1="156.3" y1="253.8" x2="274.7" y2="165.2" stroke="#ff7b72" stroke-width="2.5" stroke-linecap="round"/>
-  <rect x="188.7" y="222.5" width="8" height="8" fill="none" stroke="#ff7b72" stroke-width="1.2"/>
-  <circle cx="261.0" cy="175.4" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="270.0" y="167.4" class="pt-label">Q</text>
-  <circle cx="208.4" cy="295.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="217.4" y="287.0" class="pt-label">O</text>
-  <circle cx="268.5" cy="45.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="277.5" y="37.0" class="pt-label">P</text>
-  <circle cx="131.5" cy="192.1" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="140.5" y="184.1" class="pt-label">S</text>
-  <circle cx="169.9" cy="243.5" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="178.9" y="235.5" class="pt-label">C</text>
-  <line x1="8" y1="322" x2="26" y2="322" stroke="#0abde3" stroke-width="2"/>
-  <text x="30" y="326" class="legend-text">Circumcenter</text>
-  <line x1="126" y1="322" x2="144" y2="322" stroke="#d29922" stroke-width="2"/>
-  <text x="148" y="326" class="legend-text">Midpoint</text>
-  <line x1="216" y1="322" x2="234" y2="322" stroke="#f85149" stroke-width="2"/>
-  <text x="238" y="326" class="legend-text">Perpendicular</text>
-</svg></div>
-  </div>
-  <div class="section">
-    <div class="section-label">📐 定理陈述 / Theorem Statement</div>
-    <div class="section-content">已知：Q 是 △OPS 的外心，C 是线段 OS 的中点。
-求证：直线 CQ 垂直于直线 OS。</div>
-  </div>
-
-  <div class="section">
-    <div class="section-label">📝 证明过程 / Proof</div>
-    <div class="section-content">已知：Q 是 △OPS 的外心，C 是线段 OS 的中点。
-求证：直线 CQ 垂直于直线 OS。
-
-证明：
-  1. 由Q 是 △OPS 的外心、Q 是 △OPS 的外心，根据线段全等传递性，得线段 OQ ≅ 线段 SQ。
-  2. 由线段 OQ ≅ 线段 SQ、C 是线段 OS 的中点，根据垂直平分线逆定理，得直线 CQ 垂直于直线 OS。
-证毕。 ∎</div>
-  </div>
-
-  <div class="section">
-    <div class="section-label">🔧 Lean4 形式化代码 / Formal Lean4 Code</div>
-    <div class="section-content lean-code"><span class="keyword">import</span> LeanGeo
-
-<span class="keyword">variable</span> (C : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (O : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (P : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (Q : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (S : <span class="builtin">GPoint</span>)
-
-<span class="keyword">theorem</span> novel_4 (h0 : <span class="builtin">Circumcenter</span> Q O P S) (h1 : <span class="builtin">IsMidpoint</span> C O S) : <span class="builtin">Perpendicular</span> C Q O S :=
-  <span class="keyword">let</span> s0 := cong_trans Q O P S P S h0 h0
-  <span class="keyword">let</span> s1 := cong_perp_bisector O Q Q C s0 h1
-  s1
-</div>
-  </div>
-
-  <div class="section">
-    <div class="section-label">📊 评价</div>
-    <div class="section-content"><span class="star">★</span><span class="dim">☆</span><span class="dim">☆</span><span class="dim">☆</span><span class="dim">☆</span> 难度 2.0/10（初级）<br/>💎 价值 2.0/10（一般）· 用到 2 种知识点</div>
-  </div>
-  <div class="meta-row">
-    <span>谓词: <b>Circumcenter, Cong, Midpoint, Perpendicular</b></span>
-    <span>规则: <b>cong_perp_bisector, cong_trans</b></span>
-    <span>时间: <b>2026-02-19 02:33:58</b></span>
-  </div>
-  </div>
-</article>
-
-
-<article class="theorem-card" id="theorem-5" data-fingerprint="9c6c2097432ae013f7d7">
-  <div class="card-header">
-    <span class="title">定理 #5</span>
-    <span class="tag tag-verified">✅ Lean4 Verified</span>
-    <span class="tag tag-steps">2 步证明</span>
-    <span class="tag tag-preds">3 种谓词</span>
-    <span class="tag tag-rules">2 种规则</span>
-    <span class="tag tag-difficulty">1.8/10 初级</span>
-    <span class="tag tag-value">价值 2.0/10 (一般)</span>
-  </div>
-  <div class="card-body">
-
-  <div class="section">
-    <div class="section-label">📊 几何图示 / Geometry Diagram</div>
-    <div class="diagram-wrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 340" width="400" height="340">
-<defs>
-  <marker id="arr" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto"><polygon points="0 0, 6 2, 0 4" fill="#58a6ff"/></marker>
-</defs>
-  <line x1="223.3" y1="259.0" x2="21.7" y2="193.6" stroke="#bc8cff" stroke-width="2" stroke-linecap="round"/>
-  <line x1="378.2" y1="193.6" x2="176.8" y2="259.0" stroke="#bc8cff" stroke-width="2" stroke-linecap="round"/>
-  <line x1="120.6" y1="232.0" x2="124.4" y2="220.6" stroke="#bc8cff" stroke-width="1.5"/>
-  <line x1="279.4" y1="232.0" x2="275.6" y2="220.6" stroke="#bc8cff" stroke-width="1.5"/>
-  <line x1="200.0" y1="64.1" x2="200.0" y2="275.9" stroke="#bc8cff" stroke-width="2" stroke-linecap="round"/>
-  <line x1="120.6" y1="232.0" x2="124.4" y2="220.6" stroke="#bc8cff" stroke-width="1.5"/>
-  <line x1="206.0" y1="170.0" x2="194.0" y2="170.0" stroke="#bc8cff" stroke-width="1.5"/>
-  <line x1="176.8" y1="71.6" x2="378.2" y2="218.0" stroke="#d29922" stroke-width="1.5" stroke-linecap="round"/>
-  <rect x="273.5" y="140.8" width="8" height="8" fill="#d29922" transform="rotate(45 277.5 144.8)"/>
-  <line x1="289.1" y1="128.8" x2="188.4" y2="267.5" stroke="#ff7b72" stroke-width="2.5" stroke-linecap="round"/>
-  <rect x="254.1" y="167.5" width="8" height="8" fill="none" stroke="#ff7b72" stroke-width="1.2"/>
-  <circle cx="200.0" cy="251.5" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="209.0" y="243.5" class="pt-label">R</text>
-  <circle cx="45.0" cy="201.1" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="54.0" y="193.1" class="pt-label">V</text>
-  <circle cx="355.0" cy="201.1" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="364.0" y="193.1" class="pt-label">G</text>
-  <circle cx="200.0" cy="88.5" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="209.0" y="80.5" class="pt-label">C</text>
-  <circle cx="277.5" cy="144.8" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="286.5" y="136.8" class="pt-label">J</text>
-  <line x1="8" y1="322" x2="26" y2="322" stroke="#bc8cff" stroke-width="2"/>
-  <text x="30" y="326" class="legend-text">Cong</text>
-  <line x1="70" y1="322" x2="88" y2="322" stroke="#d29922" stroke-width="2"/>
-  <text x="92" y="326" class="legend-text">Midpoint</text>
-  <line x1="160" y1="322" x2="178" y2="322" stroke="#f85149" stroke-width="2"/>
-  <text x="182" y="326" class="legend-text">Perpendicular</text>
-</svg></div>
-  </div>
-  <div class="section">
-    <div class="section-label">📐 定理陈述 / Theorem Statement</div>
-    <div class="section-content">已知：线段 RV ≅ 线段 GR，线段 RV ≅ 线段 CR，J 是线段 CG 的中点。
-求证：直线 JR 垂直于直线 CG。</div>
-  </div>
-
-  <div class="section">
-    <div class="section-label">📝 证明过程 / Proof</div>
-    <div class="section-content">已知：线段 RV ≅ 线段 GR，线段 RV ≅ 线段 CR，J 是线段 CG 的中点。
-求证：直线 JR 垂直于直线 CG。
-
-证明：
-  1. 由线段 RV ≅ 线段 GR、线段 RV ≅ 线段 CR，根据线段全等传递性，得线段 GR ≅ 线段 CR。
-  2. 由线段 GR ≅ 线段 CR、J 是线段 CG 的中点，根据垂直平分线逆定理，得直线 JR 垂直于直线 CG。
-证毕。 ∎</div>
-  </div>
-
-  <div class="section">
-    <div class="section-label">🔧 Lean4 形式化代码 / Formal Lean4 Code</div>
-    <div class="section-content lean-code"><span class="keyword">import</span> LeanGeo
-
-<span class="keyword">variable</span> (C : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (G : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (J : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (R : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (V : <span class="builtin">GPoint</span>)
-
-<span class="keyword">theorem</span> novel_5 (h0 : <span class="builtin">Cong</span> R V G R) (h1 : <span class="builtin">Cong</span> R V C R) (h2 : <span class="builtin">IsMidpoint</span> J C G) : <span class="builtin">Perpendicular</span> J R C G :=
-  <span class="keyword">let</span> s0 := cong_trans R V G R C R h0 h1
-  <span class="keyword">let</span> s1 := cong_perp_bisector G R R J s0 h2
-  s1
-</div>
-  </div>
-
-  <div class="section">
-    <div class="section-label">📊 评价</div>
-    <div class="section-content"><span class="star">★</span><span class="dim">☆</span><span class="dim">☆</span><span class="dim">☆</span><span class="dim">☆</span> 难度 1.8/10（初级）<br/>💎 价值 2.0/10（一般）· 用到 2 种知识点</div>
-  </div>
-  <div class="meta-row">
-    <span>谓词: <b>Cong, Midpoint, Perpendicular</b></span>
-    <span>规则: <b>cong_perp_bisector, cong_trans</b></span>
-    <span>时间: <b>2026-02-19 02:33:58</b></span>
-  </div>
-  </div>
-</article>
-
-
-<article class="theorem-card" id="theorem-6" data-fingerprint="295e04f442e0613da48f">
-  <div class="card-header">
-    <span class="title">定理 #6</span>
     <span class="tag tag-verified">✅ Lean4 Verified</span>
     <span class="tag tag-steps">2 步证明</span>
     <span class="tag tag-preds">3 种谓词</span>
@@ -620,25 +157,25 @@
 <defs>
   <marker id="arr" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto"><polygon points="0 0, 6 2, 0 4" fill="#58a6ff"/></marker>
 </defs>
-  <line x1="278.4" y1="7.5" x2="340.0" y2="332.5" stroke="#d29922" stroke-width="1.5" stroke-linecap="round"/>
-  <rect x="305.2" y="166.0" width="8" height="8" fill="#d29922" transform="rotate(45 309.2 170.0)"/>
-  <line x1="27.2" y1="283.9" x2="372.8" y2="296.4" stroke="#d29922" stroke-width="1.5" stroke-linecap="round"/>
-  <rect x="196.0" y="286.2" width="8" height="8" fill="#d29922" transform="rotate(45 200.0 290.2)"/>
-  <line x1="325.6" y1="152.0" x2="183.6" y2="308.2" stroke="#ff7b72" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4 2"/>
-  <line x1="305.7" y1="151.2" x2="336.5" y2="313.8" stroke="#ff7b72" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4 2"/>
-  <line x1="318.3" y1="8.9" x2="34.3" y2="321.4" stroke="#ff7b72" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4 2"/>
-  <path d="M 295.8 184.8 A 20.0 20.0 0 0 0 313.0 189.7" fill="none" stroke="#ff7b72" stroke-width="1.5"/>
-  <path d="M 272.1 59.8 A 20.0 20.0 0 0 0 289.3 64.7" fill="none" stroke="#ff7b72" stroke-width="1.5"/>
-  <circle cx="309.2" cy="170.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="318.2" y="162.0" class="pt-label">R</text>
-  <circle cx="285.6" cy="45.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="294.6" y="37.0" class="pt-label">J</text>
-  <circle cx="332.9" cy="295.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="341.9" y="287.0" class="pt-label">M</text>
-  <circle cx="200.0" cy="290.2" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="209.0" y="282.2" class="pt-label">S</text>
-  <circle cx="67.1" cy="285.4" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
-  <text x="76.1" y="277.4" class="pt-label">C</text>
+  <line x1="216.5" y1="30.4" x2="203.3" y2="329.5" stroke="#d29922" stroke-width="1.5" stroke-linecap="round"/>
+  <rect x="205.9" y="176.0" width="8" height="8" fill="#d29922" transform="rotate(45 209.9 180.0)"/>
+  <line x1="182.1" y1="7.5" x2="207.8" y2="332.5" stroke="#d29922" stroke-width="1.5" stroke-linecap="round"/>
+  <rect x="190.9" y="166.0" width="8" height="8" fill="#d29922" transform="rotate(45 194.9 170.0)"/>
+  <line x1="212.1" y1="181.5" x2="192.7" y2="168.5" stroke="#ff7b72" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4 2"/>
+  <line x1="210.6" y1="162.7" x2="204.0" y2="312.3" stroke="#ff7b72" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4 2"/>
+  <line x1="219.4" y1="67.9" x2="180.6" y2="42.0" stroke="#ff7b72" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4 2"/>
+  <path d="M 205.4 177.0 A 5.4 5.4 0 0 0 209.6 185.4" fill="none" stroke="#ff7b72" stroke-width="1.5"/>
+  <path d="M 206.0 59.0 A 10.8 10.8 0 0 0 214.5 75.7" fill="none" stroke="#ff7b72" stroke-width="1.5"/>
+  <circle cx="209.9" cy="180.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
+  <text x="218.9" y="172.0" class="pt-label">R</text>
+  <circle cx="214.9" cy="64.9" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
+  <text x="223.9" y="56.9" class="pt-label">G</text>
+  <circle cx="204.8" cy="295.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
+  <text x="213.8" y="287.0" class="pt-label">V</text>
+  <circle cx="194.9" cy="170.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
+  <text x="203.9" y="162.0" class="pt-label">J</text>
+  <circle cx="185.1" cy="45.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
+  <text x="194.1" y="37.0" class="pt-label">E</text>
   <line x1="8" y1="322" x2="26" y2="322" stroke="#f778ba" stroke-width="2"/>
   <text x="30" y="326" class="legend-text">EqAngle</text>
   <line x1="91" y1="322" x2="109" y2="322" stroke="#d29922" stroke-width="2"/>
@@ -647,18 +184,18 @@
   </div>
   <div class="section">
     <div class="section-label">📐 定理陈述 / Theorem Statement</div>
-    <div class="section-content">已知：R 是线段 JM 的中点，S 是线段 CM 的中点。
-求证：∠SRM = ∠CJM。</div>
+    <div class="section-content">已知：R 是线段 GV 的中点，J 是线段 EV 的中点。
+求证：∠JRV = ∠EGV。</div>
   </div>
 
   <div class="section">
     <div class="section-label">📝 证明过程 / Proof</div>
-    <div class="section-content">已知：R 是线段 JM 的中点，S 是线段 CM 的中点。
-求证：∠SRM = ∠CJM。
+    <div class="section-content">已知：R 是线段 GV 的中点，J 是线段 EV 的中点。
+求证：∠JRV = ∠EGV。
 
 证明：
-  1. 由R 是线段 JM 的中点、S 是线段 CM 的中点，根据三角形中位线定理，得直线 RS 平行于直线 CJ。
-  2. 由直线 RS 平行于直线 CJ、R 是线段 JM 的中点，根据平行线内错角定理，得∠SRM = ∠CJM。
+  1. 由J 是线段 EV 的中点、R 是线段 GV 的中点，根据三角形中位线定理，得直线 JR 平行于直线 EG。
+  2. 由直线 JR 平行于直线 EG、R 是线段 GV 的中点，根据平行线内错角定理，得∠JRV = ∠EGV。
 证毕。 ∎</div>
   </div>
 
@@ -666,15 +203,15 @@
     <div class="section-label">🔧 Lean4 形式化代码 / Formal Lean4 Code</div>
     <div class="section-content lean-code"><span class="keyword">import</span> LeanGeo
 
-<span class="keyword">variable</span> (C : <span class="builtin">GPoint</span>)
+<span class="keyword">variable</span> (E : <span class="builtin">GPoint</span>)
+<span class="keyword">variable</span> (G : <span class="builtin">GPoint</span>)
 <span class="keyword">variable</span> (J : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (M : <span class="builtin">GPoint</span>)
 <span class="keyword">variable</span> (R : <span class="builtin">GPoint</span>)
-<span class="keyword">variable</span> (S : <span class="builtin">GPoint</span>)
+<span class="keyword">variable</span> (V : <span class="builtin">GPoint</span>)
 
-<span class="keyword">theorem</span> novel_1 (h0 : <span class="builtin">IsMidpoint</span> R J M) (h1 : <span class="builtin">IsMidpoint</span> S C M) : <span class="builtin">EqAngle</span> S R M C J M :=
-  <span class="keyword">let</span> s0 := midsegment_parallel R S M J C h0 h1
-  <span class="keyword">let</span> s1 := parallel_alternate_angle R S J C M s0 h0
+<span class="keyword">theorem</span> novel_1 (h0 : <span class="builtin">IsMidpoint</span> R G V) (h1 : <span class="builtin">IsMidpoint</span> J E V) : <span class="builtin">EqAngle</span> J R V E G V :=
+  <span class="keyword">let</span> s0 := midsegment_parallel J R V E G h1 h0
+  <span class="keyword">let</span> s1 := parallel_alternate_angle R J G E V s0 h0
   s1
 </div>
   </div>
@@ -686,7 +223,7 @@
   <div class="meta-row">
     <span>谓词: <b>EqAngle, Midpoint, Parallel</b></span>
     <span>规则: <b>midsegment_parallel, parallel_alternate_angle</b></span>
-    <span>时间: <b>2026-02-19 10:17:11</b></span>
+    <span>时间: <b>2026-02-19 10:43:33</b></span>
   </div>
   </div>
 </article>
