@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Data (generated at runtime)
+data/figures/
+data/knowledge/
+data/rag/
+
+# Lean4 build artifacts
+lean_geo/.lake/
+lean_geo/_check/chk_*.lean
+
+# Lean4 sub-repo (lean_geo has its own .git)
+# We include lean_geo source files but not its .git
+lean_geo/.git/
+
+# Misc
+*.log
+.env

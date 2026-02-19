@@ -1,0 +1,2 @@
+-- Re-export geometry definitions and rules.
+-- Client files only need `import LeanGeo`.

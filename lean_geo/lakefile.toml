@@ -1,0 +1,10 @@
+name = "LeanGeo"
+version = "0.1.0"
+defaultTargets = ["leangeo"]
+
+[[lean_lib]]
+name = "LeanGeo"
+
+[[lean_exe]]
+name = "leangeo"
+root = "Main"
