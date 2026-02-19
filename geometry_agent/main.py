@@ -281,7 +281,7 @@ def main() -> None:
             problems_per_gen=60,
             min_steps=5,
             min_predicates=3,
-            min_difficulty=5.0,
+            min_difficulty=3.0,
             target_novel=3,
             use_lean=args.lean,
             use_llm=use_llm,
@@ -308,7 +308,7 @@ def main() -> None:
 
         discoveries, conjectures = evolve_hybrid(
             target_novel=3,
-            min_difficulty=5.0,
+            min_difficulty=3.0,
             use_lean=args.lean,
             use_llm=use_llm,
             llm_model=args.model or (llm.model if llm else None),

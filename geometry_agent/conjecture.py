@@ -1188,85 +1188,67 @@ def gen_ultra_tangent_cc_midseg_cyclic() -> Tuple[List[Fact], Fact]:
 # generators, ensuring each produces a DISTINCT semantic/structural
 # fingerprint after proof minimization.
 
-def gen_cong_trans_isosceles_angle() -> Tuple[List[Fact], Fact]:
-    """Two congruences sharing a common segment → isosceles base angle.
+def gen_midseg_alt_angle() -> Tuple[List[Fact], Fact]:
+    """Midsegment → parallel → alternate interior angle.
 
-    Cong(A,B,A,C) + Cong(A,B,A,D)
-    → [cong_trans] → Cong(A,C,A,D)
-    → [isosceles_base_angle] → EqAngle(A,C,D, A,D,C)
-    → 2 substantive rules: cong_trans, isosceles_base_angle
-    → families: METRIC → ANGLE (cross-domain)
-    → Fingerprint: METRIC|METRIC ⟹ ANGLE (unique)
-    """
-    pts = _pts(5)
-    a, b, c, d = pts[:4]
-    assumptions = [
-        canonical_cong(a, b, a, c),
-        canonical_cong(a, b, a, d),
-    ]
-    # After cong_trans: Cong(A,C,A,D) → isosceles_base_angle: ∠ACD = ∠ADC
-    goal = canonical_eq_angle(a, c, d, a, d, c)
-    return assumptions, goal
+    Midpoint(M,A,B), Midpoint(N,A,C)
+    → [midsegment_parallel]   → Parallel(M,N,B,C)         [substantive]
+    → [midpoint_collinear]    → Collinear(A,M,B)           [trivial, auto]
+    → [parallel_alternate_angle] → EqAngle(N,M,A, C,B,A)  [substantive]
 
-
-def gen_double_cong_perp_bisector() -> Tuple[List[Fact], Fact]:
-    """Two congruences + midpoint → perpendicular (cross-domain bridge).
-
-    Cong(P,A,P,B), Cong(Q,A,Q,B), Midpoint(M,A,B)
-    → [cong_perp_bisector×2] → Perp(P,M,A,B), Perp(Q,M,A,B)
-    → [perp_symm + parallel(same line)] or: both on perp bisector
-    Goal: Parallel(P,M,Q,M)  — P,Q,M are collinear on the perp bisector
-    Actually simpler: two distinct perps → we prove one of them.
-    Better: Cong(P,A,P,B) + Midpoint(M,A,B) → Perp(P,M,A,B) is only 1 rule.
-    So let's chain: Cong(P,A,P,B) + Cong(P,A,P,C) → cong_trans → Cong(P,B,P,C)
-                    → isosceles_base_angle → EqAngle(P,B,C, P,C,B)
-    Plus Midpoint(M,B,C) → cong_perp_bisector → Perp(P,M,B,C)
-
-    → 3 rules: cong_trans, isosceles_base_angle, cong_perp_bisector
-    → families: METRIC + MIDPOINT + LINE + ANGLE
-    → Fingerprint: METRIC|METRIC|MIDPOINT ⟹ LINE (unique)
+    2 distinct substantive rules from different families.
+    Families: MIDPOINT + LINE + ANGLE  (3 families).
+    No relay variables — all points appear in both assumptions and goal.
+    Fingerprint: MIDPOINT|MIDPOINT ⟹ ANGLE (midseg-alt)
     """
     pts = _pts(6)
-    p, a, b, c, m = pts[:5]
+    a, b, c, m, n = pts[:5]
     assumptions = [
-        canonical_cong(p, a, p, b),
-        canonical_cong(p, a, p, c),
-        canonical_midpoint(m, b, c),
+        canonical_midpoint(m, a, b),
+        canonical_midpoint(n, a, c),
     ]
-    goal = canonical_perp(p, m, b, c)
+    goal = canonical_eq_angle(n, m, a, c, b, a)
     return assumptions, goal
 
 
-def gen_parallel_perp_transfer() -> Tuple[List[Fact], Fact]:
-    """Circumcenter + two midpoints → perpendicular (distinct from variant AB).
+def gen_midseg_iso_angle_trans() -> Tuple[List[Fact], Fact]:
+    """Midsegment parallel + isosceles → combined angle via transitivity.
+
+    Midpoint(M,A,B), Midpoint(N,A,C), Cong(A,B,A,C)
+    → [midsegment_parallel]      → Parallel(M,N,B,C)         [substantive]
+    → [midpoint_collinear]        → Collinear(A,M,B)          [trivial]
+    → [parallel_alternate_angle]  → EqAngle(N,M,A, C,B,A)    [substantive]
+    → [isosceles_base_angle]      → EqAngle(A,B,C, A,C,B)    [substantive]
+    → [eq_angle_trans]            → EqAngle(N,M,A, A,C,B)    [trivial]
+
+    3 distinct substantive rules from 4 families.
+    Families: MIDPOINT + LINE + METRIC + ANGLE  (4 families).
+    No relay — all points {A,B,C,M,N} in both assumptions and goal.
+    Fingerprint: MIDPOINT|MIDPOINT|METRIC ⟹ ANGLE (midseg-iso-trans)
+    """
+    pts = _pts(6)
+    a, b, c, m, n = pts[:5]
+    assumptions = [
+        canonical_midpoint(m, a, b),
+        canonical_midpoint(n, a, c),
+        canonical_cong(a, b, a, c),
+    ]
+    # ∠NMA = ∠ACB (midsegment alt angle + isosceles base + transitivity)
+    goal = canonical_eq_angle(n, m, a, a, c, b)
+    return assumptions, goal
+
+
+def gen_circumcenter_iso_angle() -> Tuple[List[Fact], Fact]:
+    """Circumcenter + midpoint → perpendicular (circumcenter on perp bisector).
 
     Circumcenter(O,A,B,C) + Midpoint(M,B,C)
-    → [circumcenter_cong_bc] → Cong(O,B,O,C)
-    → [cong_perp_bisector] → Perp(O,M,B,C)
+    → [circumcenter_cong_bc]   → Cong(O,B,O,C)             [trivial]
+    → [cong_perp_bisector]     → Perp(O,M,B,C)             [substantive]
 
-    Then: Midpoint(N,A,C)
-    → [circumcenter_cong_ac] → Cong(O,A,O,C)
-    → [cong_perp_bisector] → Perp(O,N,A,C)
-
-    Goal: EqAngle involving the perpendiculars or congruences.
-    Actually simpler — just prove the second perp:
-    With both midpoints preserved by minimization, this gives us
-    a fingerprint CIRCLE|MIDPOINT|MIDPOINT ⟹ LINE (unique).
-
-    Actually after minimization only the CC + Mid(A,C) needed.
-    So let's instead use:
-    Circumcenter(O,A,B,C), Midpoint(M,B,C), Cong(A,B,A,C)
-    → CC gives Cong(O,B,O,C), perp_bisector → Perp(O,M,B,C)
-    → Cong(A,B,A,C) → isosceles_base_angle → EqAngle(A,B,C, A,C,B)
-    Both branches needed for goal:
-    Goal= combined result using EqAngle from isosceles + Perp from CC.
-
-    Simpler: just do Circumcenter(O,A,B,C) + Midpoint(M,B,C) → Perp(O,M,B,C)
-    This is a different edge variant. Fingerprint differs due to which
-    pair of circumscribed triangle vertices the midpoint bisects.
-    → 2 rules: circumcenter_cong_bc, cong_perp_bisector
-    → Fingerprint: CIRCLE|MIDPOINT ⟹ LINE (same family as tangent_cc but
-      different canonical relabeling due to midpoint on P2-P3 vs P1-P2)
+    Note: vertex A is a relay variable (not in goal). After relay
+    elimination this simplifies to Cong(O,B,O,C)+Midpoint → 1 step.
+    Retained for structural variety; relay gate handles filtering.
+    Fingerprint: CIRCLE|MIDPOINT ⟹ LINE (circumcenter-perp)
     """
     pts = _pts(6)
     o, a, b, c, m = pts[:5]
@@ -1303,10 +1285,10 @@ DEEP_GENERATORS: List[Tuple[str, Any]] = [
     ("perp_bisector_cong_direct",      gen_perp_bisector_cong_direct),
     ("cong_perp_bisector_direct",      gen_cong_perp_bisector_direct),
     ("midseg_sim_tri_direct",          gen_midsegment_sim_tri_direct),
-    # ── Diversity generators (unique structural fingerprints) ────────
-    ("cong_trans_isosceles_angle",     gen_cong_trans_isosceles_angle),
-    ("double_cong_perp_bisector",      gen_double_cong_perp_bisector),
-    ("parallel_perp_transfer",         gen_parallel_perp_transfer),
+    # ── Diversity generators (no relay variables, 2+ substantive rules) ─
+    ("midseg_alt_angle",               gen_midseg_alt_angle),
+    ("midseg_iso_angle_trans",         gen_midseg_iso_angle_trans),
+    ("circumcenter_iso_angle",         gen_circumcenter_iso_angle),
     # ── Ultra-deep generators (difficulty ≥ 6.0, 7–9 distinct rules) ─
     ("ultra_cc_midseg_cyclic",         gen_ultra_cc_midseg_cyclic),
     ("ultra_tangent_cc_midseg",        gen_ultra_tangent_cc_midseg),
@@ -2185,7 +2167,9 @@ def generate_heuristic_conjectures(
         steps = list(result.final_state.history)
 
         # Prune unused assumptions and redundant steps
-        from .evolve import prune_proof, compress_proof, minimize_assumptions_proven
+        from .evolve import (prune_proof, compress_proof,
+                             minimize_assumptions_proven,
+                             _eliminate_relay_variables)
         assumptions, steps = prune_proof(assumptions, goal, steps)
         # Compress trivial symmetry steps for conciseness
         steps = compress_proof(steps)
@@ -2195,6 +2179,12 @@ def generate_heuristic_conjectures(
             rules=rules, checker=checker,
             knowledge_store=knowledge_store,
             max_redundancy_checks=4,
+        )
+        # Eliminate relay variables that artificially inflate depth
+        assumptions, steps, _relay_simplified = _eliminate_relay_variables(
+            assumptions, goal, steps,
+            rules=rules, checker=checker,
+            knowledge_store=knowledge_store,
         )
 
         if len(steps) < 2:

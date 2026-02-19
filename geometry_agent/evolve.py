@@ -381,6 +381,128 @@ def _has_trivial_relay(assumptions: List[Fact], goal: Fact,
     return False
 
 
+# ── Relay variable elimination (v0.13.0) ─────────────────────────────
+
+def _eliminate_relay_variables(
+    assumptions: List[Fact],
+    goal: Fact,
+    steps: List[Step],
+    rules: Optional[List[Rule]] = None,
+    checker: Optional[object] = None,
+    knowledge_store: Optional[KnowledgeStore] = None,
+    max_depth: int = 22,
+) -> Tuple[List[Fact], List[Step], bool]:
+    """Eliminate relay variables that artificially inflate proof depth.
+
+    A *relay variable* is a point that appears in one or more assumptions
+    but **not** in the goal.  When the proof derives an intermediate
+    conclusion that no longer references the relay variable, the original
+    assumptions can be replaced by that bridge conclusion, yielding a
+    simpler theorem.
+
+    Example
+    -------
+    Original:  ``Cong(E,X,P,X), Cong(E,X,R,X), Midpoint(H,P,R) ⊢ Perp(H,X,P,R)``
+    Relay var: E (not in goal)
+    Bridge:    step 1 derives ``Cong(P,X,R,X)`` from the two E-assumptions
+    Simplified: ``Cong(P,X,R,X), Midpoint(H,P,R) ⊢ Perp(H,X,P,R)``
+
+    If the simplified theorem can be re-proved, it replaces the original.
+    The caller should then re-check novelty gates (e.g. min_steps) to
+    reject theorems whose depth was entirely due to relay padding.
+
+    Returns
+    -------
+    (new_assumptions, new_steps, was_simplified)
+    """
+    goal_points = set(goal.args)
+
+    # Collect all points in assumptions
+    assm_points: Set[str] = set()
+    for a in assumptions:
+        assm_points.update(a.args)
+
+    relay_candidates = sorted(assm_points - goal_points)
+    if not relay_candidates:
+        return assumptions, steps, False
+
+    if rules is None:
+        rules = default_rules()
+    if checker is None:
+        checker = MockLeanChecker()
+    if knowledge_store is None:
+        knowledge_store = get_global_store()
+
+    workers = max(1, (os.cpu_count() or 2) // 2)
+    best_assumptions = assumptions
+    best_steps = steps
+    simplified = False
+
+    for relay_pt in relay_candidates:
+        # Assumptions that reference this relay point
+        relay_assms = {id(a) for a in best_assumptions if relay_pt in a.args}
+        if not relay_assms:
+            continue
+        remaining_assms = [a for a in best_assumptions if id(a) not in relay_assms]
+
+        # Find bridge facts: intermediate conclusions derived (directly or
+        # indirectly) from relay assumptions that no longer contain the
+        # relay point.  These are the "useful outputs" of the relay chain.
+        bridge_facts: List[Fact] = []
+        for step in best_steps:
+            cf = step.conclusion_fact
+            if relay_pt in cf.args:
+                continue  # still uses relay — not a bridge
+            # Check if any premise of this step uses the relay point
+            if any(relay_pt in pf.args for pf in step.premise_facts):
+                bridge_facts.append(cf)
+
+        if not bridge_facts:
+            continue
+
+        # De-duplicate bridge facts and avoid adding facts already present
+        remaining_set = set(remaining_assms)
+        new_bridges = []
+        for bf in bridge_facts:
+            if bf not in remaining_set:
+                remaining_set.add(bf)
+                new_bridges.append(bf)
+
+        candidate_assms = remaining_assms + new_bridges
+
+        # Try to re-prove with simplified assumptions
+        state = GeoState(facts=set(candidate_assms))
+        cfg = SearchConfig(
+            beam_width=32,
+            max_depth=max_depth,
+            parallel_workers=workers,
+        )
+        result = beam_search(
+            init_state=state,
+            goal=Goal(goal),
+            rules=rules,
+            checker=checker,
+            config=cfg,
+            knowledge_store=knowledge_store,
+        )
+
+        if result.success:
+            new_steps = list(result.final_state.history)
+            candidate_assms, new_steps = prune_proof(
+                candidate_assms, goal, new_steps,
+            )
+            new_steps = compress_proof(new_steps)
+            best_assumptions = candidate_assms
+            best_steps = new_steps
+            simplified = True
+            logger.info(
+                "中继变量已消除: %s (移除 %d 个假设, 添加 %d 个桥接事实)",
+                relay_pt, len(relay_assms), len(new_bridges),
+            )
+
+    return best_assumptions, best_steps, simplified
+
+
 # ── Quality gate D: premise consistency (Pólya strict) ───────────────
 
 def _has_inconsistent_premises(assumptions: List[Fact]) -> bool:
@@ -555,14 +677,13 @@ def _is_cross_domain_proof(assumptions: List[Fact], goal: Fact, steps: List[Step
        concept families.
 
     Also requires:
-    - assumptions involve ≥2 distinct predicates
-    - goal predicate differs from at least one assumption predicate
+    - goal predicate differs from at least one assumption predicate,
+      OR assumptions involve ≥2 distinct predicates
     """
     assm_preds = {f.predicate for f in assumptions}
-    if len(assm_preds) < 2:
-        return False
 
-    if goal.predicate in assm_preds and len(assm_preds) == 1:
+    # Single-predicate assumptions with same-predicate goal → not cross-domain
+    if len(assm_preds) <= 1 and goal.predicate in assm_preds:
         return False
 
     # ── Family-based detection (primary) ──
@@ -2211,6 +2332,13 @@ def evolve(
                 knowledge_store=knowledge,
                 max_depth=max(12, difficulty * 3),
             )
+            # Eliminate relay variables (points in assumptions but not goal)
+            assumptions, steps, _relay_simplified = _eliminate_relay_variables(
+                assumptions, goal, steps,
+                rules=rules, checker=checker,
+                knowledge_store=knowledge,
+                max_depth=max(12, difficulty * 3),
+            )
             n_steps = len(steps)
 
             # Quality gate A: reject implicit point coincidence
@@ -2562,6 +2690,10 @@ def evolve_hybrid(
         steps = compress_proof(steps)
         # Minimize: remove genuinely redundant assumptions
         assm, steps = minimize_assumptions_proven(assm, goal, steps)
+        # Eliminate relay variables (points in assumptions but not goal)
+        assm, steps, _relay_simplified = _eliminate_relay_variables(
+            assm, goal, steps,
+        )
 
         # Quality gate A: reject implicit point coincidence
         if _has_implicit_coincidence(assm):
@@ -2628,17 +2760,22 @@ def evolve_hybrid(
         # Novelty checks (relaxed vs. evolve()): we apply softer
         # thresholds because GA/heuristic/RLVR already prefilter.
         from .evolve import is_mathlib4_known, _is_cross_domain_proof
+        is_cross = _is_cross_domain_proof(assm, goal, steps)
         if is_mathlib4_known(assm, goal, steps):
             # Allow mathlib4-known theorem only if the proof itself
-            # is complex enough (>=3 distinct rules) to be valuable.
+            # is complex enough to be valuable.
+            # Cross-domain proofs (3+ families) are inherently more
+            # interesting, so require only 2 distinct rules.
+            # Single-domain proofs require 3 distinct rules.
             drules = _distinct_rule_types(steps)
-            if len(drules) < 3:
+            min_rules = 2 if is_cross else 3
+            if len(drules) < min_rules:
                 if verbose:
                     print(f"    ✗ mathlib4已知+规则少 ({_strat}): {len(drules)}种")
                 return None
         # Cross-domain proofs (spanning multiple concept families)
         # are preferred but not required for complex proofs (>=2 rules).
-        if not _is_cross_domain_proof(assm, goal, steps):
+        if not is_cross:
             drules2 = _distinct_rule_types(steps)
             if len(drules2) < 2:
                 if verbose:

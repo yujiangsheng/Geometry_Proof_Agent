@@ -131,9 +131,9 @@
   <h1>🌟 Geometry Proof Agent — 新发现定理</h1>
   <p>自我演化过程中发现的 mathlib4 知识库之外的几何定理</p>
   <div class="stats">
-    <span class="badge">定理总数 <b id="total-count">5</b></span>
+    <span class="badge">定理总数 <b id="total-count">6</b></span>
     <span class="badge">最长证明 <b id="max-steps">2</b> 步</span>
-    <span class="badge">最后更新 <b id="last-update">2026-02-19 02:33</b></span>
+    <span class="badge">最后更新 <b id="last-update">2026-02-19 10:17</b></span>
   </div>
 </header>
 
@@ -597,6 +597,96 @@
     <span>谓词: <b>Cong, Midpoint, Perpendicular</b></span>
     <span>规则: <b>cong_perp_bisector, cong_trans</b></span>
     <span>时间: <b>2026-02-19 02:33:58</b></span>
+  </div>
+  </div>
+</article>
+
+
+<article class="theorem-card" id="theorem-6" data-fingerprint="295e04f442e0613da48f">
+  <div class="card-header">
+    <span class="title">定理 #6</span>
+    <span class="tag tag-verified">✅ Lean4 Verified</span>
+    <span class="tag tag-steps">2 步证明</span>
+    <span class="tag tag-preds">3 种谓词</span>
+    <span class="tag tag-rules">2 种规则</span>
+    <span class="tag tag-difficulty">3.1/10 简单</span>
+    <span class="tag tag-value">价值 2.0/10 (一般)</span>
+  </div>
+  <div class="card-body">
+
+  <div class="section">
+    <div class="section-label">📊 几何图示 / Geometry Diagram</div>
+    <div class="diagram-wrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 340" width="400" height="340">
+<defs>
+  <marker id="arr" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto"><polygon points="0 0, 6 2, 0 4" fill="#58a6ff"/></marker>
+</defs>
+  <line x1="278.4" y1="7.5" x2="340.0" y2="332.5" stroke="#d29922" stroke-width="1.5" stroke-linecap="round"/>
+  <rect x="305.2" y="166.0" width="8" height="8" fill="#d29922" transform="rotate(45 309.2 170.0)"/>
+  <line x1="27.2" y1="283.9" x2="372.8" y2="296.4" stroke="#d29922" stroke-width="1.5" stroke-linecap="round"/>
+  <rect x="196.0" y="286.2" width="8" height="8" fill="#d29922" transform="rotate(45 200.0 290.2)"/>
+  <line x1="325.6" y1="152.0" x2="183.6" y2="308.2" stroke="#ff7b72" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4 2"/>
+  <line x1="305.7" y1="151.2" x2="336.5" y2="313.8" stroke="#ff7b72" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4 2"/>
+  <line x1="318.3" y1="8.9" x2="34.3" y2="321.4" stroke="#ff7b72" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4 2"/>
+  <path d="M 295.8 184.8 A 20.0 20.0 0 0 0 313.0 189.7" fill="none" stroke="#ff7b72" stroke-width="1.5"/>
+  <path d="M 272.1 59.8 A 20.0 20.0 0 0 0 289.3 64.7" fill="none" stroke="#ff7b72" stroke-width="1.5"/>
+  <circle cx="309.2" cy="170.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
+  <text x="318.2" y="162.0" class="pt-label">R</text>
+  <circle cx="285.6" cy="45.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
+  <text x="294.6" y="37.0" class="pt-label">J</text>
+  <circle cx="332.9" cy="295.0" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
+  <text x="341.9" y="287.0" class="pt-label">M</text>
+  <circle cx="200.0" cy="290.2" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
+  <text x="209.0" y="282.2" class="pt-label">S</text>
+  <circle cx="67.1" cy="285.4" r="5" fill="#e6edf3" stroke="#30363d" stroke-width="1.5"/>
+  <text x="76.1" y="277.4" class="pt-label">C</text>
+  <line x1="8" y1="322" x2="26" y2="322" stroke="#f778ba" stroke-width="2"/>
+  <text x="30" y="326" class="legend-text">EqAngle</text>
+  <line x1="91" y1="322" x2="109" y2="322" stroke="#d29922" stroke-width="2"/>
+  <text x="113" y="326" class="legend-text">Midpoint</text>
+</svg></div>
+  </div>
+  <div class="section">
+    <div class="section-label">📐 定理陈述 / Theorem Statement</div>
+    <div class="section-content">已知：R 是线段 JM 的中点，S 是线段 CM 的中点。
+求证：∠SRM = ∠CJM。</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">📝 证明过程 / Proof</div>
+    <div class="section-content">已知：R 是线段 JM 的中点，S 是线段 CM 的中点。
+求证：∠SRM = ∠CJM。
+
+证明：
+  1. 由R 是线段 JM 的中点、S 是线段 CM 的中点，根据三角形中位线定理，得直线 RS 平行于直线 CJ。
+  2. 由直线 RS 平行于直线 CJ、R 是线段 JM 的中点，根据平行线内错角定理，得∠SRM = ∠CJM。
+证毕。 ∎</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">🔧 Lean4 形式化代码 / Formal Lean4 Code</div>
+    <div class="section-content lean-code"><span class="keyword">import</span> LeanGeo
+
+<span class="keyword">variable</span> (C : <span class="builtin">GPoint</span>)
+<span class="keyword">variable</span> (J : <span class="builtin">GPoint</span>)
+<span class="keyword">variable</span> (M : <span class="builtin">GPoint</span>)
+<span class="keyword">variable</span> (R : <span class="builtin">GPoint</span>)
+<span class="keyword">variable</span> (S : <span class="builtin">GPoint</span>)
+
+<span class="keyword">theorem</span> novel_1 (h0 : <span class="builtin">IsMidpoint</span> R J M) (h1 : <span class="builtin">IsMidpoint</span> S C M) : <span class="builtin">EqAngle</span> S R M C J M :=
+  <span class="keyword">let</span> s0 := midsegment_parallel R S M J C h0 h1
+  <span class="keyword">let</span> s1 := parallel_alternate_angle R S J C M s0 h0
+  s1
+</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">📊 评价</div>
+    <div class="section-content"><span class="star">★</span><span class="star">★</span><span class="dim">☆</span><span class="dim">☆</span><span class="dim">☆</span> 难度 3.1/10（简单）<br/>💎 价值 2.0/10（一般）· 用到 2 种知识点</div>
+  </div>
+  <div class="meta-row">
+    <span>谓词: <b>EqAngle, Midpoint, Parallel</b></span>
+    <span>规则: <b>midsegment_parallel, parallel_alternate_angle</b></span>
+    <span>时间: <b>2026-02-19 10:17:11</b></span>
   </div>
   </div>
 </article>
