@@ -389,10 +389,22 @@ def _has_inconsistent_premises(assumptions: List[Fact]) -> bool:
     there exists at least one non-degenerate coordinate assignment where
     ALL assumptions hold simultaneously with tight tolerance.
 
+    Dynamically scales trials for complex constraint sets (Cyclic, multiple
+    Perpendicular, etc.) to reduce false negatives from the numerical solver.
+
     Returns ``True`` if the premises appear **inconsistent** (i.e. no
     valid non-degenerate config found after many trials).
     """
-    return not check_premise_consistency(assumptions)
+    # Adaptive trials: complex constraints need more attempts
+    preds = {f.predicate for f in assumptions}
+    has_cyclic = "Cyclic" in preds
+    n_perp = sum(1 for f in assumptions if f.predicate == "Perpendicular")
+    if has_cyclic or n_perp >= 2:
+        n_trials = 200  # complex constraints need more solver attempts
+    else:
+        n_trials = 120  # up from default 80 for better coverage
+    result = check_premise_consistency(assumptions, n_trials=n_trials)
+    return not result
 
 
 # ── Quality gate E: representation-equivalence detection ─────────────
@@ -2570,6 +2582,7 @@ def evolve_hybrid(
         if _has_inconsistent_premises(assm):
             if verbose:
                 print(f"    ✗ 门D拒绝 ({_strat}): 前提矛盾")
+                print(f"      前提: {[str(a) for a in assm]}")
             return None
 
         # Quality gate E: reject representation-equivalence goals

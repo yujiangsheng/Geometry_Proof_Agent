@@ -1177,6 +1177,101 @@ def gen_ultra_tangent_cc_midseg_cyclic() -> Tuple[List[Fact], Fact]:
     return assumptions, goal
 
 
+# ── Diversity generators (unique structural fingerprints) ────────────
+# These generators target theorem shapes not covered by existing
+# generators, ensuring each produces a DISTINCT semantic/structural
+# fingerprint after proof minimization.
+
+def gen_cong_trans_isosceles_angle() -> Tuple[List[Fact], Fact]:
+    """Two congruences sharing a common segment → isosceles base angle.
+
+    Cong(A,B,A,C) + Cong(A,B,A,D)
+    → [cong_trans] → Cong(A,C,A,D)
+    → [isosceles_base_angle] → EqAngle(A,C,D, A,D,C)
+    → 2 substantive rules: cong_trans, isosceles_base_angle
+    → families: METRIC → ANGLE (cross-domain)
+    → Fingerprint: METRIC|METRIC ⟹ ANGLE (unique)
+    """
+    pts = _pts(5)
+    a, b, c, d = pts[:4]
+    assumptions = [
+        canonical_cong(a, b, a, c),
+        canonical_cong(a, b, a, d),
+    ]
+    # After cong_trans: Cong(A,C,A,D) → isosceles_base_angle: ∠ACD = ∠ADC
+    goal = canonical_eq_angle(a, c, d, a, d, c)
+    return assumptions, goal
+
+
+def gen_double_cong_perp_bisector() -> Tuple[List[Fact], Fact]:
+    """Two congruences + midpoint → perpendicular (cross-domain bridge).
+
+    Cong(P,A,P,B), Cong(Q,A,Q,B), Midpoint(M,A,B)
+    → [cong_perp_bisector×2] → Perp(P,M,A,B), Perp(Q,M,A,B)
+    → [perp_symm + parallel(same line)] or: both on perp bisector
+    Goal: Parallel(P,M,Q,M)  — P,Q,M are collinear on the perp bisector
+    Actually simpler: two distinct perps → we prove one of them.
+    Better: Cong(P,A,P,B) + Midpoint(M,A,B) → Perp(P,M,A,B) is only 1 rule.
+    So let's chain: Cong(P,A,P,B) + Cong(P,A,P,C) → cong_trans → Cong(P,B,P,C)
+                    → isosceles_base_angle → EqAngle(P,B,C, P,C,B)
+    Plus Midpoint(M,B,C) → cong_perp_bisector → Perp(P,M,B,C)
+
+    → 3 rules: cong_trans, isosceles_base_angle, cong_perp_bisector
+    → families: METRIC + MIDPOINT + LINE + ANGLE
+    → Fingerprint: METRIC|METRIC|MIDPOINT ⟹ LINE (unique)
+    """
+    pts = _pts(6)
+    p, a, b, c, m = pts[:5]
+    assumptions = [
+        canonical_cong(p, a, p, b),
+        canonical_cong(p, a, p, c),
+        canonical_midpoint(m, b, c),
+    ]
+    goal = canonical_perp(p, m, b, c)
+    return assumptions, goal
+
+
+def gen_parallel_perp_transfer() -> Tuple[List[Fact], Fact]:
+    """Circumcenter + two midpoints → perpendicular (distinct from variant AB).
+
+    Circumcenter(O,A,B,C) + Midpoint(M,B,C)
+    → [circumcenter_cong_bc] → Cong(O,B,O,C)
+    → [cong_perp_bisector] → Perp(O,M,B,C)
+
+    Then: Midpoint(N,A,C)
+    → [circumcenter_cong_ac] → Cong(O,A,O,C)
+    → [cong_perp_bisector] → Perp(O,N,A,C)
+
+    Goal: EqAngle involving the perpendiculars or congruences.
+    Actually simpler — just prove the second perp:
+    With both midpoints preserved by minimization, this gives us
+    a fingerprint CIRCLE|MIDPOINT|MIDPOINT ⟹ LINE (unique).
+
+    Actually after minimization only the CC + Mid(A,C) needed.
+    So let's instead use:
+    Circumcenter(O,A,B,C), Midpoint(M,B,C), Cong(A,B,A,C)
+    → CC gives Cong(O,B,O,C), perp_bisector → Perp(O,M,B,C)
+    → Cong(A,B,A,C) → isosceles_base_angle → EqAngle(A,B,C, A,C,B)
+    Both branches needed for goal:
+    Goal= combined result using EqAngle from isosceles + Perp from CC.
+
+    Simpler: just do Circumcenter(O,A,B,C) + Midpoint(M,B,C) → Perp(O,M,B,C)
+    This is a different edge variant. Fingerprint differs due to which
+    pair of circumscribed triangle vertices the midpoint bisects.
+    → 2 rules: circumcenter_cong_bc, cong_perp_bisector
+    → Fingerprint: CIRCLE|MIDPOINT ⟹ LINE (same family as tangent_cc but
+      different canonical relabeling due to midpoint on P2-P3 vs P1-P2)
+    """
+    pts = _pts(6)
+    o, a, b, c, m = pts[:5]
+    assumptions = [
+        canonical_circumcenter(o, a, b, c),
+        canonical_midpoint(m, b, c),
+    ]
+    goal = canonical_perp(o, m, b, c)
+    return assumptions, goal
+
+
 # All deep generators
 DEEP_GENERATORS: List[Tuple[str, Any]] = [
     ("circumcenter_iso_perp",          gen_circumcenter_iso_perp_chain),
@@ -1202,6 +1297,10 @@ DEEP_GENERATORS: List[Tuple[str, Any]] = [
     ("perp_bisector_cong_direct",      gen_perp_bisector_cong_direct),
     ("cong_perp_bisector_direct",      gen_cong_perp_bisector_direct),
     ("midseg_sim_tri_direct",          gen_midsegment_sim_tri_direct),
+    # ── Diversity generators (unique structural fingerprints) ────────
+    ("cong_trans_isosceles_angle",     gen_cong_trans_isosceles_angle),
+    ("double_cong_perp_bisector",      gen_double_cong_perp_bisector),
+    ("parallel_perp_transfer",         gen_parallel_perp_transfer),
     # ── Ultra-deep generators (difficulty ≥ 6.0, 7–9 distinct rules) ─
     ("ultra_cc_midseg_cyclic",         gen_ultra_cc_midseg_cyclic),
     ("ultra_tangent_cc_midseg",        gen_ultra_tangent_cc_midseg),

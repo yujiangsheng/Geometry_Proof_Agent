@@ -114,7 +114,8 @@ class PolyaResult:
 # Pólya testing is *verification*, not proof — we allow pixel-level
 # imprecision so that valid conjectures aren't falsified by
 # floating-point rounding in constrained coordinate generation.
-_EPS = 1e-4
+_EPS = 1e-4          # legacy alias (do NOT modify at runtime — use eps= params)
+_EPS_DEFAULT = 1e-4  # thread-safe default tolerance
 
 # Maximum allowed coordinate magnitude — prevents OverflowError in
 # expressions like x**2 when iterative constraint adjustments amplify
@@ -180,12 +181,26 @@ Coords = Dict[str, Tuple[float, float]]
 
 
 def _check_predicate(pred: str, args: Tuple[str, ...],
-                     coords: Coords) -> Optional[bool]:
+                     coords: Coords, *,
+                     eps: Optional[float] = None) -> Optional[bool]:
     """Check if a predicate holds numerically.
+
+    Parameters
+    ----------
+    eps : float, optional
+        Override tolerance.  When ``None`` (default), uses the module-level
+        ``_EPS`` constant (``1e-4``).  Passing an explicit value avoids
+        reading the mutable global, which is **essential** when this
+        function is called from multiple threads concurrently.
 
     Returns True/False if checkable, or None if the predicate is
     unsupported or the points are degenerate (e.g. coincident).
     """
+    # Shadow the global _EPS with a thread-safe local value.
+    # All existing references to `_EPS` in this function body will
+    # now bind to this local, eliminating any thread-safety issues.
+    _EPS = eps if eps is not None else _EPS_DEFAULT  # noqa: F841
+
     # Resolve coordinates; if any point is missing return None
     try:
         pts = [coords[a] for a in args]
@@ -466,6 +481,185 @@ def _random_coords(points: Sequence[str],
                 random.uniform(-spread, spread)) for p in points}
 
 
+def _smart_init_coords(
+    points: Sequence[str],
+    assumptions: Sequence[Fact],
+    spread: float = 10.0,
+) -> Coords:
+    """Generate initial coordinates with constraint-aware seeding.
+
+    Improvements over pure random:
+      - **Cyclic-aware**: When ``Cyclic(A,B,C,D)`` is present, place
+        A, B, C, D on a common circle with well-separated angles.
+      - **Cyclic+Perp pattern**: When ``Cyclic(A,B,C,D)`` + ``Midpoint(M,A,B)``
+        + ``Perp(C,M,A,B)`` are all present, analytically compute C at the
+        intersection of the perpendicular bisector of AB and the circle.
+      - **Cong-aware**: When ``Cong(P,A,P,B)`` + ``Cyclic`` share points,
+        analytically satisfy both.
+      - **Perp-aware**: When multiple ``Perp`` constraints share a
+        common point, pre-place that point at the intersection.
+
+    Falls back to uniform random for unconstrained points.
+    """
+    coords = _random_coords(points, spread)
+
+    # ── Phase 0: Cyclic seeding ──
+    cyclics = [f for f in assumptions if f.predicate == "Cyclic" and len(f.args) == 4]
+    midpoints = [f for f in assumptions if f.predicate == "Midpoint" and len(f.args) == 3]
+    perps = [f for f in assumptions if f.predicate == "Perpendicular" and len(f.args) == 4]
+
+    if cyclics:
+        cyc = cyclics[0]
+        cyc_pts = list(cyc.args)
+        cyc_set = set(cyc_pts)
+
+        # Place 4 points on a circle of radius spread/2, well-separated
+        center = (random.uniform(-spread / 4, spread / 4),
+                  random.uniform(-spread / 4, spread / 4))
+        radius = spread * 0.3 + random.uniform(0, spread * 0.2)
+        base_angle = random.uniform(0, 2 * math.pi)
+        # Spread angles: not evenly spaced (to avoid special configs)
+        # but well-separated (> 30° apart)
+        angle_offsets = sorted([0.0,
+                                random.uniform(0.6, 1.2),
+                                random.uniform(1.8, 3.0),
+                                random.uniform(3.5, 5.0)])
+        for i, pt in enumerate(cyc_pts):
+            ang = base_angle + angle_offsets[i]
+            coords[pt] = (center[0] + radius * math.cos(ang),
+                          center[1] + radius * math.sin(ang))
+
+        # ── Cyclic+Midpoint+Perp pattern: analytical solution ──
+        # Pattern: Cyclic(A,B,C,D) + Midpoint(M,A,B) + Perp(X,Y,A,B)
+        # where {X,Y}∩cyclic ≠ ∅ and M ∈ {X,Y} and (A,B) match midpoint endpoints
+        # Solution: the cyclic point in {X,Y} must be at intersection
+        # of perp bisector of AB and the circle
+        for mf in midpoints:
+            m_pt, m_a, m_b = mf.args
+            if m_a in cyc_set and m_b in cyc_set:
+                mid_endpoints = {m_a, m_b}
+                # First, compute and set the midpoint
+                pa_m = coords[m_a]
+                pb_m = coords[m_b]
+                coords[m_pt] = ((pa_m[0] + pb_m[0]) / 2,
+                                (pa_m[1] + pb_m[1]) / 2)
+                for pf in perps:
+                    p_a, p_b, p_c, p_d = pf.args
+                    # Check: Perp(X, Y, A, B) where {A,B} == midpoint endpoints
+                    if {p_c, p_d} != mid_endpoints:
+                        continue
+                    # Identify: which of {p_a, p_b} is the midpoint output?
+                    # and which is the cyclic point?
+                    cyc_point = None
+                    if p_a == m_pt and p_b in cyc_set:
+                        cyc_point = p_b
+                    elif p_b == m_pt and p_a in cyc_set:
+                        cyc_point = p_a
+                    if cyc_point is None:
+                        continue
+
+                    # cyc_point must be on perp bisector of (m_a, m_b) AND on circle
+                    pa = coords[m_a]
+                    pb = coords[m_b]
+                    mx = (pa[0] + pb[0]) / 2
+                    my = (pa[1] + pb[1]) / 2
+                    # Perp bisector direction of AB
+                    dx, dy = pb[0] - pa[0], pb[1] - pa[1]
+                    perp_d = (-dy, dx)  # direction of perp bisector
+                    # Find intersection of perp bisector (through midpoint) and circle
+                    # Parametric: P(t) = (mx + t*perp_d.x, my + t*perp_d.y)
+                    # Circle: (x-cx)^2 + (y-cy)^2 = r^2
+                    ox = mx - center[0]
+                    oy = my - center[1]
+                    a_coeff = perp_d[0]**2 + perp_d[1]**2
+                    b_coeff = 2 * (ox * perp_d[0] + oy * perp_d[1])
+                    c_coeff = ox**2 + oy**2 - radius**2
+                    disc = b_coeff**2 - 4 * a_coeff * c_coeff
+                    if disc >= 0 and a_coeff > 1e-12:
+                        sqrt_disc = math.sqrt(disc)
+                        t1 = (-b_coeff + sqrt_disc) / (2 * a_coeff)
+                        t2 = (-b_coeff - sqrt_disc) / (2 * a_coeff)
+                        # Pick t that gives better separation
+                        t = random.choice([t1, t2])
+                        coords[cyc_point] = (mx + t * perp_d[0],
+                                             my + t * perp_d[1])
+
+        # If Cong represents |XA| = |XB| where A,B are Cyclic points,
+        # place A and B symmetrically on the circle wrt the diameter through X.
+        # After canonical sorting, the common point X can appear in any pair position.
+        for cfact in assumptions:
+            if cfact.predicate == "Cong" and len(cfact.args) == 4:
+                seg1 = {cfact.args[0], cfact.args[1]}
+                seg2 = {cfact.args[2], cfact.args[3]}
+                common = seg1 & seg2
+                if len(common) == 1:
+                    x_pt = common.pop()
+                    a_pt = (seg1 - {x_pt}).pop()
+                    b_pt = (seg2 - {x_pt}).pop()
+                    if a_pt in cyc_set and b_pt in cyc_set:
+                        # |XA| = |XB| with A, B on circle →
+                        # place A and B symmetrically about the diameter through X
+                        ang_x = math.atan2(
+                            coords.get(x_pt, center)[1] - center[1],
+                            coords.get(x_pt, center)[0] - center[0],
+                        )
+                        # Place A and B at equal angular offsets from X's diameter
+                        offset = random.uniform(0.4, 1.2)
+                        coords[a_pt] = (center[0] + radius * math.cos(ang_x + offset),
+                                        center[1] + radius * math.sin(ang_x + offset))
+                        coords[b_pt] = (center[0] + radius * math.cos(ang_x - offset),
+                                        center[1] + radius * math.sin(ang_x - offset))
+
+    # ── Phase 0b: Perp pair seeding (two Perp on same base line) ──
+    # Collect midpoint output names to avoid placing them instead of the "free" point
+    mid_outputs = {mf.args[0] for mf in midpoints}
+    if len(perps) >= 2:
+        # Group Perps by their "base line" (args[2], args[3])
+        from collections import defaultdict as _dd
+        base_groups: Dict[frozenset, List[Fact]] = _dd(list)
+        for pf in perps:
+            base_key = frozenset([pf.args[2], pf.args[3]])
+            base_groups[base_key].append(pf)
+        for base_key, group in base_groups.items():
+            if len(group) < 2:
+                continue
+            # Multiple perps on same base line: place the free points
+            # analytically on the perpendicular line through midpoint
+            base_pts = list(base_key)
+            p1, p2 = coords[base_pts[0]], coords[base_pts[1]]
+            mx = (p1[0] + p2[0]) / 2
+            my = (p1[1] + p2[1]) / 2
+            dx, dy = p2[0] - p1[0], p2[1] - p1[1]
+            perp_dir = (-dy, dx)
+            norm = math.hypot(*perp_dir)
+            if norm > 1e-10:
+                perp_dir = (perp_dir[0] / norm, perp_dir[1] / norm)
+                placed_count = 0
+                for pf in group:
+                    # Identify the "free" point: NOT in base_key AND NOT a midpoint
+                    first_pair = [pf.args[0], pf.args[1]]
+                    # Prefer the point that is NOT the midpoint output
+                    free_pt = None
+                    for pt in first_pair:
+                        if pt not in base_key and pt not in mid_outputs:
+                            free_pt = pt
+                            break
+                    if free_pt is None:
+                        # Fallback: pick any point not in base_key
+                        for pt in first_pair:
+                            if pt not in base_key:
+                                free_pt = pt
+                                break
+                    if free_pt is not None:
+                        placed_count += 1
+                        # Place at different distances on the perp line for separation
+                        t = placed_count * spread * 0.15 * random.choice([-1, 1])
+                        coords[free_pt] = (mx + t * perp_dir[0],
+                                           my + t * perp_dir[1])
+
+    return coords
+
+
 def _presolve_perp_intersections(
     coords: Coords,
     assumptions: Sequence[Fact],
@@ -568,7 +762,13 @@ def _constrained_coords(
     If the constraints can't be satisfied within *max_retries* adjustment
     passes, return None (the trial is skipped).
     """
-    coords = _random_coords(points, spread)
+    # Use smart initialization when complex constraints are present
+    _has_cyclic = any(f.predicate == "Cyclic" for f in assumptions)
+    _has_multi_perp = sum(1 for f in assumptions if f.predicate == "Perpendicular") >= 2
+    if _has_cyclic or _has_multi_perp:
+        coords = _smart_init_coords(points, assumptions, spread)
+    else:
+        coords = _random_coords(points, spread)
 
     # --- Separate deterministic vs. iterative constraints ----------------
     _DET_PREDS = {"Midpoint", "Circumcenter", "Between"}
@@ -595,54 +795,51 @@ def _constrained_coords(
 
     # Use a tighter internal tolerance so converged results easily
     # pass the strict re-verification in check_premise_consistency.
-    global _EPS
-    saved_eps = _EPS
-    _EPS = saved_eps * 0.01  # 100× tighter than normal
+    # Thread-safe: pass eps to _check_predicate instead of mutating global.
+    _tight_eps = _EPS_DEFAULT * 0.01  # 100× tighter than normal
 
-    try:
-        for _attempt in range(max_retries):
-            # Phase 1: ALWAYS recompute deterministic constraints (Midpoint,
-            # Circumcenter, Between) so their outputs reflect the latest
-            # input coordinates.  This prevents stale values after other
-            # constraints have been adjusted.
-            for fact in det_facts:
+    for _attempt in range(max_retries):
+        # Phase 1: ALWAYS recompute deterministic constraints (Midpoint,
+        # Circumcenter, Between) so their outputs reflect the latest
+        # input coordinates.  This prevents stale values after other
+        # constraints have been adjusted.
+        for fact in det_facts:
+            try:
+                coords = _adjust_for_constraint(coords, fact, spread)
+            except (OverflowError, ValueError, ZeroDivisionError):
+                pass
+
+        # Phase 1.5: Analytically solve perpendicular-line intersections.
+        # This must run AFTER midpoints are recomputed so the perpendicular
+        # lines pass through the correct midpoint positions.
+        if _attempt == 0 or _attempt % 10 == 0:
+            coords = _presolve_perp_intersections(coords, assumptions)
+
+        # Phase 2: check ALL constraints and adjust non-deterministic ones
+        all_ok = True
+        for fact in ordered:
+            result = _check_predicate(fact.predicate, fact.args, coords,
+                                      eps=_tight_eps)
+            if result is None:
+                continue  # unsupported predicate → skip
+            if result:
+                continue  # already satisfied
+
+            all_ok = False
+            # For deterministic constraints they were already recomputed
+            # above, so only adjust non-deterministic ones here.
+            if fact.predicate not in _DET_PREDS:
                 try:
-                    coords = _adjust_for_constraint(coords, fact, spread)
-                except (OverflowError, ValueError):
-                    pass
+                    coords = _adjust_for_constraint(
+                        coords, fact, spread, protected=frozenset(det_outputs))
+                except (OverflowError, ValueError, ZeroDivisionError):
+                    pass  # constraint adjustment failed; skip
 
-            # Phase 1.5: Analytically solve perpendicular-line intersections.
-            # This must run AFTER midpoints are recomputed so the perpendicular
-            # lines pass through the correct midpoint positions.
-            if _attempt == 0 or _attempt % 10 == 0:
-                coords = _presolve_perp_intersections(coords, assumptions)
+        # Clamp coordinates to prevent overflow in subsequent passes
+        coords = _clamp_coords(coords)
 
-            # Phase 2: check ALL constraints and adjust non-deterministic ones
-            all_ok = True
-            for fact in ordered:
-                result = _check_predicate(fact.predicate, fact.args, coords)
-                if result is None:
-                    continue  # unsupported predicate → skip
-                if result:
-                    continue  # already satisfied
-
-                all_ok = False
-                # For deterministic constraints they were already recomputed
-                # above, so only adjust non-deterministic ones here.
-                if fact.predicate not in _DET_PREDS:
-                    try:
-                        coords = _adjust_for_constraint(
-                            coords, fact, spread, protected=frozenset(det_outputs))
-                    except (OverflowError, ValueError):
-                        pass  # constraint adjustment failed; skip
-
-            # Clamp coordinates to prevent overflow in subsequent passes
-            coords = _clamp_coords(coords)
-
-            if all_ok:
-                return coords
-    finally:
-        _EPS = saved_eps
+        if all_ok:
+            return coords
 
     return None
 
@@ -937,7 +1134,7 @@ def _circumcenter_pt(
         if not (math.isfinite(ux) and math.isfinite(uy)):
             return None
         return (ux, uy)
-    except (OverflowError, ValueError):
+    except (OverflowError, ValueError, ZeroDivisionError):
         return None
 
 
@@ -989,7 +1186,7 @@ def polya_test(
         try:
             coords = _constrained_coords(all_points, assumptions,
                                          spread=spread, max_retries=30)
-        except (OverflowError, ValueError):
+        except (OverflowError, ValueError, ZeroDivisionError):
             continue
         if coords is None:
             # Could not satisfy assumptions → skip this trial
@@ -1007,7 +1204,7 @@ def polya_test(
                 if not check:
                     assumptions_ok = False
                     break
-        except (OverflowError, ValueError):
+        except (OverflowError, ValueError, ZeroDivisionError):
             continue
 
         if not assumptions_ok:
@@ -1019,7 +1216,7 @@ def polya_test(
         # Now check the goal
         try:
             goal_check = _check_predicate(goal.predicate, goal.args, coords)
-        except (OverflowError, ValueError):
+        except (OverflowError, ValueError, ZeroDivisionError):
             continue
         if goal_check is None:
             # Goal predicate unsupported → can't evaluate; still
@@ -1211,8 +1408,6 @@ def check_premise_consistency(
         ``True`` if at least one non-degenerate, tight-tolerance
         configuration was found; ``False`` otherwise.
     """
-    global _EPS
-
     # Collect point names
     all_points: List[str] = []
     seen: Set[str] = set()
@@ -1224,7 +1419,6 @@ def check_premise_consistency(
     if len(all_points) < 2:
         return True  # trivially consistent
 
-    saved_eps = _EPS
     n_valid = 0
 
     for _ in range(n_trials):
@@ -1234,7 +1428,7 @@ def check_premise_consistency(
                 all_points, assumptions,
                 spread=spread, max_retries=120,
             )
-        except (OverflowError, ValueError):
+        except (OverflowError, ValueError, ZeroDivisionError):
             continue
         if coords is None:
             continue
@@ -1247,20 +1441,19 @@ def check_premise_consistency(
             continue
 
         # Phase 3: re-verify ALL assumptions with strict tolerance
-        _EPS = 1e-5
+        # Thread-safe: pass eps to _check_predicate instead of mutating global.
         try:
             all_ok = True
             for fact in assumptions:
-                check = _check_predicate(fact.predicate, fact.args, coords)
+                check = _check_predicate(fact.predicate, fact.args, coords,
+                                         eps=1e-5)
                 if check is None:
                     continue  # unsupported predicate — skip
                 if not check:
                     all_ok = False
                     break
-        except (OverflowError, ValueError):
+        except (OverflowError, ValueError, ZeroDivisionError):
             all_ok = False
-        finally:
-            _EPS = saved_eps
 
         if all_ok:
             n_valid += 1
@@ -1297,8 +1490,6 @@ def verify_premises_strict(
         n_valid : number of non-degenerate configs that passed
         n_total : number of trials attempted
     """
-    global _EPS
-
     # Collect point names
     all_points: List[str] = []
     seen: Set[str] = set()
@@ -1315,7 +1506,6 @@ def verify_premises_strict(
     if len(all_points) < 2:
         return True, n_trials, n_trials
 
-    saved_eps = _EPS
     n_valid = 0
 
     for trial in range(n_trials):
@@ -1324,7 +1514,7 @@ def verify_premises_strict(
                 all_points, assumptions,
                 spread=spread, max_retries=150,
             )
-        except (OverflowError, ValueError):
+        except (OverflowError, ValueError, ZeroDivisionError):
             continue
         if coords is None:
             continue
@@ -1336,11 +1526,13 @@ def verify_premises_strict(
             continue
 
         # Strict re-verification of ALL premises
-        _EPS = 5e-6  # strict but achievable (tighter than normal 1e-5)
+        # Thread-safe: pass eps to _check_predicate instead of mutating global.
+        _strict_eps = 5e-6  # strict but achievable (tighter than normal 1e-5)
         try:
             all_ok = True
             for fact in assumptions:
-                check = _check_predicate(fact.predicate, fact.args, coords)
+                check = _check_predicate(fact.predicate, fact.args, coords,
+                                         eps=_strict_eps)
                 if check is None:
                     continue
                 if not check:
@@ -1348,13 +1540,12 @@ def verify_premises_strict(
                     break
             # If goal provided, also verify goal holds
             if all_ok and goal is not None:
-                goal_check = _check_predicate(goal.predicate, goal.args, coords)
+                goal_check = _check_predicate(goal.predicate, goal.args, coords,
+                                              eps=_strict_eps)
                 if goal_check is not None and not goal_check:
                     all_ok = False
-        except (OverflowError, ValueError):
+        except (OverflowError, ValueError, ZeroDivisionError):
             all_ok = False
-        finally:
-            _EPS = saved_eps
 
         if all_ok:
             n_valid += 1

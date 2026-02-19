@@ -141,6 +141,13 @@ class PolyaController:
         if complexity >= 3:
             premise_probe_trials = 8
 
+        # Boost premise probes for complex constraints (Cyclic, multi-Perp)
+        # to match Gate D confidence level and avoid wasting search time
+        has_cyclic = any(f.predicate == "Cyclic" for f in assumptions)
+        n_perp = sum(1 for f in assumptions if f.predicate == "Perpendicular")
+        if has_cyclic or n_perp >= 2:
+            premise_probe_trials = max(premise_probe_trials, 30)
+
         # ── Three-tier search budget allocation ───────────────
         # Tier A: Simple (cont_score < 0.4) — fast confirmation
         # Tier B: Medium (0.4 <= cont_score < 0.7) — balanced
