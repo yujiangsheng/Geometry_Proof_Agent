@@ -23,10 +23,15 @@ A theorem is considered **novel** if:
     (structural fingerprint check catches e.g. Parallel ↔ Perpendicular swaps)
   • Its knowledge density ≥ 0.4 (rejects proofs repeating the same rule)
 
-Quality pipeline (v0.13.0)
+Quality pipeline (v0.14.0)
 --------------------------
   • ``prune_proof()``    — backward BFS removes unused assumptions & dead steps
   • ``compress_proof()`` — removes trivial symmetry steps by remapping premises
+  • ``_eliminate_relay_variables()`` (v0.14.0) — removes relay/pass-through
+    variables: points that appear only in assumptions to "rename" a
+    relationship and are never used in the proof conclusion.  Identifies
+    relay points, traces bridging facts, and replaces relay occurrences
+    with the original points throughout assumptions and goal.
   • ``_has_implicit_coincidence()`` — rejects theorems where two named points
     are forced to be the same entity (e.g. two midpoints of the same segment)
   • ``_has_degenerate_goal()``     — rejects goals with degenerate geometry
@@ -35,11 +40,13 @@ Quality pipeline (v0.13.0)
     that merely transfer a relationship to new point names for the goal
   • ``_has_inconsistent_premises()`` — rejects vacuously-true theorems whose
     premises are contradictory / force point degeneracy (Pólya strict check);
-    **adaptive trial count** (v0.13.0): 200 for Cyclic/multi-Perp, 120 otherwise
+    **adaptive trial count**: 200 for Cyclic/multi-Perp, 120 otherwise
   • ``_has_representation_equivalence()`` — rejects theorems whose goal or
     assumptions merely equate two point-name representations of the same
     geometric object (e.g. ∠SAZ = ∠LAU when S on line AL, Z on line AU)
-  • Structural fingerprinting via ``structural_theorem_fingerprint()``
+  • Semantic + structural fingerprinting via ``semantic_theorem_fingerprint()``
+    and ``structural_theorem_fingerprint()`` with symmetry-variant
+    canonicalization (v0.14.0)
   • Knowledge-density gate rejects repetitive proofs (kd < 0.4)
 
 Problem generators (38+)

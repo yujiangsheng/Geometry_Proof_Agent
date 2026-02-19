@@ -23,11 +23,11 @@ while new proofs continuously enrich the knowledge base.
     VerificationResult, ProofVerifier), ``search``.
 
   **Layer 4 – Discovery Engines** (发现引擎层):
-    Knowledge-adaptive evolution, experience-guided conjecture (29 deep
-    generators), genetic algorithm, RLVR (reinforcement learning with
-    verifiable rewards), thread-safe Pólya plausible-reasoning agent
-    with constraint-aware coordinate initialisation, Pólya 4-step
-    adaptive controller.
+    Knowledge-adaptive evolution with relay variable elimination (v0.14.0),
+    experience-guided conjecture (29 deep generators), genetic algorithm,
+    RLVR (reinforcement learning with verifiable rewards), thread-safe
+    Pólya plausible-reasoning agent with constraint-aware coordinate
+    initialisation, Pólya 4-step adaptive controller.
     Modules: ``evolve``, ``conjecture``, ``genetic``, ``rlvr``,
     ``polya``, ``polya_controller``.
 
@@ -44,7 +44,7 @@ Author:  Jiangsheng Yu
 License: MIT
 """
 
-__version__ = "0.13.0"
+__version__ = "0.14.0"
 __author__ = "Jiangsheng Yu"
 __license__ = "MIT"
 

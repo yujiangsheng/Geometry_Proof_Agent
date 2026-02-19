@@ -2,7 +2,7 @@
 
 > Scope: keep only audit conclusions and action items.
 > Canonical architecture reference: [ARCHITECTURE.md](ARCHITECTURE.md).
-> Last updated: 2026-02-18
+> Last updated: 2026-02-19
 
 ---
 
@@ -27,8 +27,9 @@ This avoids long-term doc drift caused by duplicated full-architecture descripti
 - Layering is clear and mostly respected (`foundation -> interfaces -> reasoning -> discovery -> orchestration`).
 - De Bruijn-style separation is preserved (symbolic engine vs verifier).
 - Knowledge-guided loop is implemented and materially improves search guidance.
-- Semantic/structural dedup is integrated across discovery and persistence.
+- Semantic/structural dedup is integrated across discovery and persistence, now with **symmetry-variant canonicalization** (v0.14.0) for true isomorphism invariance.
 - HTML export now includes stronger consistency safeguards (statement/proof/diagram alignment).
+- **Relay variable elimination** (v0.14.0) in `evolve.py` cleans up pass-through point renames post-proof.
 
 ### Hotspots
 

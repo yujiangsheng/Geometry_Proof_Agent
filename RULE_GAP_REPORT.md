@@ -1,6 +1,6 @@
 # Rule Gap Report (Geometry Knowledge)
 
-Date: 2026-02-18
+Date: 2026-02-19
 
 This report evaluates the current deduction-rule system from three angles:
 1. Predicate reachability

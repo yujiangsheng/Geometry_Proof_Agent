@@ -1,4 +1,4 @@
-"""main.py – CLI entry point for Geometry Proof Agent (v0.12.0).
+"""main.py – CLI entry point for Geometry Proof Agent (v0.14.0).
 
 Demonstrates the five-layer architecture with built-in demo problems
 and provides access to all major features via command-line flags.

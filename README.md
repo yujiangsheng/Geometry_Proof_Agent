@@ -2,7 +2,7 @@
 
 **Lean4-Verified Geometry Theorem Discovery & Proving System**
 
-> **Author:** Jiangsheng Yu  ·  **License:** MIT  ·  **Version:** 0.13.0
+> **Author:** Jiangsheng Yu  ·  **License:** MIT  ·  **Version:** 0.14.0
 
 A multi-agent framework that **discovers novel geometry theorems** through
 symbolic search, verifies every derivation with the **Lean 4** kernel, and
@@ -19,11 +19,13 @@ search strategy, while new proofs continuously enrich the knowledge base.
 | **23 geometric predicates** | Parallel, Perpendicular, Collinear, Midpoint, Cong, EqAngle, Cyclic, SimTri, CongTri, Circumcenter, Tangent, EqRatio, Between, AngleBisect, Concurrent, EqDist, EqArea, Harmonic, PolePolar, InvImage, EqCrossRatio, RadicalAxis, OnCircle (`Circle` is an alias in some docs/output) |
 | **69 deduction rules** | Expanded rule base with converse/production and cross-family bridge enhancers (Lean map fallback supported for new rules) |
 | **5 discovery engines** | Heuristic search · Genetic Algorithm · RLVR · MCTS · Pólya plausible-reasoning |
-| **29 deep generators** | Hand-crafted conjecture generators spanning 4–5 concept families, including 3 diversity generators for structurally distinct fingerprints |
+| **29 deep generators** | Hand-crafted conjecture generators spanning 4–5 concept families, including 3 clean diversity generators for structurally distinct fingerprints |
 | **Thread-safe Pólya agent** | Numerical pre-filter with constraint-aware coordinate initialisation (`_smart_init_coords`), fully thread-safe — no global-state mutation |
 | **Mutual promotion loop** | Knowledge ↔ evolution: experience guides search/conjecture; new proofs enrich knowledge |
 | **Knowledge-guided search** | Beam search scorer with rule-experience bonus (+15 pts) and proof-chain bonus (+5 pts) |
-| **Adaptive Gate D** | Premise-consistency check with adaptive trial counts (200 for Cyclic/multi-Perp, 120 otherwise) |
+| **Adaptive Gate D** | Premise-consistency check with adaptive trial counts (200 for Cyclic/multi-Perp, 120 otherwise) |
+| **Relay variable elimination** | Post-proof cleanup removes pass-through point renames for cleaner theorems |
+| **Symmetry-variant fingerprinting** | Enumerates predicate symmetry equivalences × assumption permutations for true isomorphism-invariant dedup |
 | **Anti-substitution filter** | Structural fingerprinting rejects trivial predicate-swap variants |
 | **Proof compression** | Symmetry steps auto-removed; only substantive reasoning kept |
 | **Fair difficulty scoring** | Ceva-calibrated 1–10 scale with density, diversity & tier factors |
@@ -307,8 +309,9 @@ Each theorem passes 6 novelty gates:
 3. Not a known mathlib4 family (single-domain results excluded)
 4. ≥ 3 distinct rule types used
 5. Genuinely cross-domain (≥ 3 concept families or bridge rules)
-6. Semantic + structural fingerprint dedup (prevents isomorphic and
-   simple-substitution duplicates, including cross-session structural dedup)
+6. Symmetry-variant fingerprint dedup — enumerates all predicate symmetry
+   equivalences × assumption permutations for true isomorphism-invariant
+   and anti-substitution dedup (cross-session structural dedup included)
 
 ### 7. Difficulty Evaluation
 
@@ -354,8 +357,8 @@ Geometry_Proof_Agent/
 ├── LICENSE                        # MIT License
 ├── run_evolve.py                  # Profile-based theorem discovery runner
 │
-├── geometry_agent/                # Main Python package (18 modules, ~19,700 lines)
-│   ├── __init__.py                # Package metadata (v0.13.0)
+├── geometry_agent/                # Main Python package (18 modules, ~19,900 lines)
+│   ├── __init__.py                # Package metadata (v0.14.0)
 │   ├── dsl.py                     # Domain-specific language: Fact, Step, GeoState (301)
 │   ├── rules.py                   # 69 deduction rules with O(1) indexed matching (1808)
 │   ├── search.py                  # Knowledge-guided parallel beam search (319)
@@ -364,14 +367,14 @@ Geometry_Proof_Agent/
 │   ├── llm.py                     # LLM client (Ollama) with auto-detection (650)
 │   ├── rag.py                     # RAG: local vector store + web search (1095)
 │   ├── pipeline.py                # Multi-agent orchestration (5 agents) (698)
-│   ├── evolve.py                  # Knowledge-adaptive self-evolution loop (2921)
-│   ├── conjecture.py              # 29 deep generators + MCTS conjecture search (2483)
+│   ├── evolve.py                  # Knowledge-adaptive self-evolution + relay elimination (3060)
+│   ├── conjecture.py              # 29 deep generators + MCTS conjecture search (2480)
 │   ├── genetic.py                 # Genetic Algorithm for conjecture evolution (889)
 │   ├── rlvr.py                    # RLVR (RL with Verifiable Rewards) (944)
-│   ├── polya.py                   # Thread-safe Pólya agent + smart init (1629)
+│   ├── polya.py                   # Thread-safe Pólya agent + smart init (1646)
 │   ├── polya_controller.py        # Pólya four-step adaptive controller (330)
 │   ├── knowledge.py               # Persistent knowledge store with guidance API (840)
-│   ├── semantic.py                # Fingerprints, NL, Lean4 gen, visualization (1081)
+│   ├── semantic.py                # Fingerprints (symmetry-variant), NL, Lean4, viz (1272)
 │   ├── difficulty_eval.py         # Fair difficulty evaluation agent (568)
 │   ├── html_export.py             # Styled HTML export with SVG diagrams (1333)
 │   └── main.py                    # CLI entry point (331)
@@ -479,6 +482,6 @@ MIT — see [LICENSE](LICENSE).
   title   = {Geometry Proof Agent: Lean4-Verified Geometry Theorem Discovery},
   year    = {2025},
   url     = {https://github.com/yujiangsheng/Geometry_Proof_Agent},
-  version = {0.13.0}
+  version = {0.14.0}
 }
 ```

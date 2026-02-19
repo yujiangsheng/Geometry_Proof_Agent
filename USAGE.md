@@ -1,6 +1,6 @@
 # Usage Guide
 
-Detailed usage examples and recipes for the Geometry Proof Agent v0.13.0.
+Detailed usage examples and recipes for the Geometry Proof Agent v0.14.0.
 
 ---
 
@@ -727,6 +727,12 @@ print(f"Original: {len(steps)} → Pruned: {len(pruned_steps)} → Compressed: {
 
 ### Semantic Fingerprinting
 
+v0.14.0 uses **symmetry-variant canonicalization**: each fingerprint enumerates
+all predicate symmetry equivalences (e.g. `Cong(A,B,C,D)` ≡ `Cong(C,D,A,B)`)
+× assumption permutations, picks the lexicographic minimum, and hashes it.
+This gives true isomorphism-invariant dedup without relying on a fixed
+normalisation order.
+
 ```python
 from geometry_agent.semantic import (
     semantic_theorem_fingerprint,
@@ -735,6 +741,7 @@ from geometry_agent.semantic import (
 )
 
 # Check if two theorems are isomorphic (same up to point renaming)
+# Now uses symmetry-variant canonicalization internally
 fp1 = semantic_theorem_fingerprint(assm1, goal1)
 fp2 = semantic_theorem_fingerprint(assm2, goal2)
 is_same = fp1 == fp2

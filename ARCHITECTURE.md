@@ -1,7 +1,7 @@
-# Architecture — Geometry Proof Agent v0.13.0
+# Architecture — Geometry Proof Agent v0.14.0
 
-> **Version**: 0.13.0 · **Author**: Jiangsheng Yu · **License**: MIT  
-> **18 Python modules** (~19,700 lines) + companion **Lean 4** project
+> **Version**: 0.14.0 · **Author**: Jiangsheng Yu · **License**: MIT  
+> **18 Python modules** (~19,900 lines) + companion **Lean 4** project
 
 Deep-dive into the system's design, module API, data flow,
 and dependency structure.  v0.12.0 introduced a **mutual promotion loop**
@@ -10,6 +10,9 @@ selection, and search strategy, while new proofs enrich the knowledge base.
 v0.13.0 adds **thread-safe Pólya agent**, **constraint-aware coordinate
 initialisation**, **29 deep generators** (including 3 diversity generators),
 and **adaptive Gate D** trial counts.
+v0.14.0 adds **relay variable elimination** in proof post-processing,
+**symmetry-variant canonicalization** for true isomorphism-invariant
+fingerprinting, and **clean diversity generators** without relay artifacts.
 
 ---
 
@@ -77,7 +80,7 @@ trusted ground truth.
 |--------|------:|---------|
 | `dsl.py` | 301 | Core data types: `Fact`, `Goal`, `Step`, `GeoState`, 24 canonical constructors |
 | `rules.py` | 1808 | 69 deduction rules including converse/production and cross-family bridge enhancers |
-| `semantic.py` | 1081 | Fingerprinting, NL generation (zh/en), Lean 4 codegen, SVG visualisation |
+| `semantic.py` | 1272 | Fingerprinting (symmetry-variant canonicalization v0.14.0), NL generation (zh/en), Lean 4 codegen, SVG visualisation |
 | `knowledge.py` | 840 | Thread-safe persistent store with **guidance API**: rule success profiles, proof chains, predicate coverage, difficulty profiles, structural dedup |
 | `difficulty_eval.py` | 568 | Ceva-calibrated difficulty scoring (1–10) with concept-family analysis |
 
@@ -108,11 +111,11 @@ independently checks them.  They share no mutable state.
 
 | Module | Lines | Purpose |
 |--------|------:|---------|
-| `evolve.py` | 2921 | **Knowledge-adaptive** evolution loop: 38+ problem generators, adaptive difficulty, weighted generator selection, proof pruning, compression, adaptive Gate D trials (200/120), cross-session structural dedup |
-| `conjecture.py` | 2483 | **Experience-guided** conjecture search: bridge composition, backward chaining, MCTS; 29 deep generators (incl. 3 diversity generators); experience-weighted bridge selection, under-explored predicate targeting |
+| `evolve.py` | 3060 | **Knowledge-adaptive** evolution loop: 38+ problem generators, adaptive difficulty, weighted generator selection, proof pruning, compression, relay variable elimination (v0.14.0), adaptive Gate D trials (200/120), cross-session structural dedup |
+| `conjecture.py` | 2480 | **Experience-guided** conjecture search: bridge composition, backward chaining, MCTS; 29 deep generators (incl. 3 clean diversity generators v0.14.0); experience-weighted bridge selection, under-explored predicate targeting |
 | `genetic.py` | 889 | Genetic Algorithm: genome encoding, crossover, mutation, tournament |
 | `rlvr.py` | 944 | REINFORCE-style policy gradient with symbolic engine as reward oracle |
-| `polya.py` | 1629 | **Thread-safe** Pólya plausible-reasoning agent: constraint-aware coordinate initialisation (`_smart_init_coords`), thread-safe epsilon (no `global _EPS`), numerical conjecture validation |
+| `polya.py` | 1646 | **Thread-safe** Pólya plausible-reasoning agent: constraint-aware coordinate initialisation (`_smart_init_coords`), thread-safe epsilon (no `global _EPS`), numerical conjecture validation |
 | `polya_controller.py` | 330 | Pólya 4-step adaptive controller: conjecture profiling, plan generation, boosted `premise_probe_trials` for Cyclic/multi-Perp |
 
 **Quality gates**: Every candidate theorem must pass ≥5 checks:
@@ -201,7 +204,7 @@ module, organised by layer (bottom-up).
 
 | Item | Detail |
 |------|--------|
-| `__version__` | `"0.13.0"` |
+| `__version__` | `"0.14.0"` |
 | `__author__` | `"Jiangsheng Yu"` |
 | `__all__` | 18 module names exported |
 
@@ -324,7 +327,7 @@ similarity-metric-concurrency bridges).
 
 ---
 
-### 4.4 `semantic.py` (1081 lines) — Semantic Layer
+### 4.4 `semantic.py` (1272 lines) — Semantic Layer
 
 Solves four problems: fingerprinting, natural language translation,
 Lean 4 code generation, and visualisation.
@@ -334,10 +337,12 @@ Lean 4 code generation, and visualisation.
 | Function | Role |
 |----------|------|
 | `_canonical_relabel(facts)` | Structural relabelling: point names → P0, P1, ... |
+| `_normalize_symmetry(fact)` | Normalize predicate arguments using symmetry rules |
+| `_symmetry_variants(fact)` | Enumerate all logically-equivalent argument orderings for a predicate (v0.14.0) |
 | `compute_isomorphism_map(src_facts, dst_facts)` | Constraint propagation + backtracking for point-name bijection |
 | `remap_fact(fact, mapping)` / `remap_step(step, mapping)` | Apply point-name mapping |
-| `semantic_theorem_fingerprint(assumptions, goal)` | Theorem → canonical fingerprint (point-renaming invariant) |
-| `structural_theorem_fingerprint(assumptions, goal)` | Theorem → fingerprint (point-renaming + predicate-family invariant) |
+| `semantic_theorem_fingerprint(assumptions, goal)` | Theorem → canonical fingerprint (point-renaming invariant); searches over symmetry-variants × assumption-permutations for lexicographic minimum (v0.14.0) |
+| `structural_theorem_fingerprint(assumptions, goal)` | Theorem → fingerprint (point-renaming + predicate-family invariant); same symmetry-variant search (v0.14.0) |
 | `semantic_proof_fingerprint(assumptions, steps, goal)` | Full proof → canonical fingerprint |
 
 #### Section 2 — Natural Language
@@ -618,7 +623,7 @@ Bounded-width BFS with knowledge-guided enhancements:
 
 ---
 
-### 4.12 `evolve.py` (2921 lines) — Knowledge-Adaptive Evolution Loop
+### 4.12 `evolve.py` (3060 lines) — Knowledge-Adaptive Evolution Loop
 
 The largest module.  Drives theorem discovery in a knowledge-aware loop:
 
@@ -630,11 +635,12 @@ for each generation:
     2. Solve with knowledge-guided beam search
     3. Prune proof (backward BFS removes dead steps)
     4. Compress proof (remove trivial symmetry steps)
-    5. Evaluate difficulty (reject if < threshold)
-    6. Check novelty (semantic + structural fingerprint, cross-session dedup)
-    7. Check knowledge density (reject if < 0.4)
-    8. Record experience and failed attempts
-    9. Export to HTML, auto-save knowledge with guidance summary
+    5. Eliminate relay variables (v0.14.0: remove pass-through renames)
+    6. Evaluate difficulty (reject if < threshold)
+    7. Check novelty (semantic + structural fingerprint, cross-session dedup)
+    8. Check knowledge density (reject if < 0.4)
+    9. Record experience and failed attempts
+   10. Export to HTML, auto-save knowledge with guidance summary
 ```
 
 #### Novelty Filtering
@@ -665,6 +671,7 @@ Categories:
 | **Cross-session structural dedup** | `structural_dedup_check()` prevents rediscovery |
 | **Knowledge auto-save** | Saves store with `guidance_summary()` after each generation |
 | **Adaptive Gate D** (v0.13.0) | `_has_inconsistent_premises()` uses 200 trials for Cyclic/multi-Perp, 120 otherwise |
+| **Relay variable elimination** (v0.14.0) | `_eliminate_relay_variables()` removes pass-through point renames from proofs |
 
 #### Main Functions
 
@@ -677,7 +684,7 @@ Categories:
 
 ---
 
-### 4.13 `conjecture.py` (2483 lines) — Experience-Guided Conjecture Search
+### 4.13 `conjecture.py` (2480 lines) — Experience-Guided Conjecture Search
 
 Three strategies with configurable budget allocation, all guided by
 accumulated experience:
@@ -716,7 +723,8 @@ difficulty ≥ 5.0, organised in 5 tiers:
   `gen_pole_polar_midpoint_chain`, `gen_radical_axis_circumcenter`
 - **Extended 5**: bridge extended, cross-domain, and similarity
 - **Clean 6**: ultra-clean congruence/midpoint/cyclic combinations
-- **Diversity 3** (v0.13.0): structurally distinct fingerprint generators
+- **Diversity 3** (v0.14.0): clean, relay-free diversity generators with
+  structurally distinct fingerprints
   - `gen_cong_trans_isosceles_angle` (Cong|Cong → EqAngle, METRIC → ANGLE)
   - `gen_double_cong_perp_bisector` (Cong|Cong|Midpoint → Perp, METRIC|MIDPOINT → LINE)
   - `gen_parallel_perp_transfer` (Circumcenter|Midpoint(BC) → Perp, CIRCLE|MIDPOINT → LINE)
@@ -803,7 +811,7 @@ conjecture templates, updated via REINFORCE with baseline subtraction.
 
 ---
 
-### 4.16 `polya.py` (912 lines) — Pólya Plausible-Reasoning Agent
+### 4.16 `polya.py` (1646 lines) — Pólya Plausible-Reasoning Agent
 
 Numerical pre-filter inspired by George Pólya's plausible reasoning:
 
@@ -1130,12 +1138,15 @@ deterministic argument order. This ensures that `Parallel(A,B,C,D)` and
 
 ### Fingerprints
 
-Three levels of fingerprinting:
+Three levels of fingerprinting, all using **symmetry-variant
+canonicalization** (v0.14.0) — enumerates logically-equivalent argument
+orderings per predicate × assumption-list permutations to find the
+lexicographic minimum, guaranteeing true isomorphism invariance:
 
 | Level | Function | Invariant |
 |-------|----------|-----------|
-| Semantic | `semantic_theorem_fingerprint()` | Point renaming |
-| Structural | `structural_theorem_fingerprint()` | Point renaming + predicate family |
+| Semantic | `semantic_theorem_fingerprint()` | Point renaming + predicate symmetry |
+| Structural | `structural_theorem_fingerprint()` | Point renaming + predicate symmetry + predicate family |
 | Proof | `semantic_proof_fingerprint()` | Point renaming + proof steps |
 
 ---
@@ -1149,13 +1160,14 @@ Candidate theorem (assumptions + goal + proof)
   │
   ├─ 1. Proof pruning       (remove dead steps, backward BFS)
   ├─ 2. Proof compression   (remove trivial symmetry steps)
-  ├─ 3. Semantic fingerprint (reject isomorphic duplicates)
-  ├─ 4. Structural fingerprint (reject predicate-swap variants)
-  ├─ 5. Cross-session structural dedup (knowledge store)
-  ├─ 6. Difficulty scoring   (reject if score < threshold)
-  ├─ 7. Knowledge density    (reject if kd < 0.4)
-  ├─ 8. Distinct-rule count  (reject if < min_predicates)
-  └─ 9. Mathlib4 known check (reject if matches known library theorem)
+  ├─ 3. Relay variable elimination (v0.14.0: remove pass-through renames)
+  ├─ 4. Semantic fingerprint (reject isomorphic duplicates; symmetry-variant canonical)
+  ├─ 5. Structural fingerprint (reject predicate-swap variants; symmetry-variant canonical)
+  ├─ 6. Cross-session structural dedup (knowledge store)
+  ├─ 7. Difficulty scoring   (reject if score < threshold)
+  ├─ 8. Knowledge density    (reject if kd < 0.4)
+  ├─ 9. Distinct-rule count  (reject if < min_predicates)
+  └─10. Mathlib4 known check (reject if matches known library theorem)
         │
         ▼
   Accepted → NovelTheorem → HTML export + optional Lean 4 verify
@@ -1225,4 +1237,4 @@ name, input/output predicate types, and argument patterns.
 
 ---
 
-*Architecture reference — v0.13.0*
+*Architecture reference — v0.14.0*

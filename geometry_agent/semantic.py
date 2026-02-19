@@ -11,6 +11,13 @@ Four core problems solved here:
    the relabeled form.  Simple substitution therefore never creates a
    "new" theorem in the knowledge store.
 
+   **Symmetry-variant canonicalization** (v0.14.0): Fingerprinting now
+   enumerates all logically-equivalent argument orderings for each
+   predicate (e.g. ``Midpoint(M,A,B) ↔ Midpoint(M,B,A)``) combined
+   with all permutations of the assumption list.  The lexicographically
+   minimal canonical-relabeled string is chosen, guaranteeing true
+   isomorphism invariance regardless of original point names.
+
 2. **Natural-language description**
    Every ``Fact`` and proof trace can be rendered into readable Chinese /
    English text so that problems and conclusions are expressed as
